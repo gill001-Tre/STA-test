@@ -1,10 +1,10 @@
 import { Link, useLocation } from 'react-router-dom'
-import { useMsal } from '@azure/msal-react'
+// import { useMsal } from '@azure/msal-react'
 import { useState } from 'react'
 
 const Header = () => {
   const location = useLocation()
-  const { instance, accounts } = useMsal()
+  // const { instance, accounts } = useMsal()
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
 
   const navItems = [
@@ -15,7 +15,8 @@ const Header = () => {
   ]
 
   const handleLogout = () => {
-    instance.logoutPopup()
+    // instance.logoutPopup()
+    console.log('Logout - will be implemented with SSO')
   }
 
   const years = [2024, 2025, 2026, 2027, 2028]
@@ -67,7 +68,7 @@ const Header = () => {
               <button
                 onClick={handleLogout}
                 className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-primary hover:bg-gray-100 transition-colors"
-                title={accounts[0]?.name || 'User'}
+                title="User Profile"
               >
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
