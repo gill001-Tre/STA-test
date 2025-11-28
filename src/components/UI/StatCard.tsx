@@ -13,7 +13,7 @@ const StatCard = ({ icon, label, value }: StatCardProps) => {
           {icon}
         </div>
       </div>
-      <div className="text-4xl font-bold text-gray-900">{value}</div>
+      <div className="text-3xl font-semibold text-gray-900">{value}</div>
     </div>
   )
 }

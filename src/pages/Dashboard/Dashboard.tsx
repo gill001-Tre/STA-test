@@ -1,8 +1,50 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import StatCard from '@/components/UI/StatCard'
 import ProgressBar from '@/components/UI/ProgressBar'
 import StatusBadge from '@/components/UI/StatusBadge'
 import ProgressCircle from '@/components/UI/ProgressCircle'
+
+const STORAGE_KEY = 'strategy-pillars-assignments'
+
+interface PillarAssignment {
+  id: number
+  number: string
+  title: string
+  assignedWins: number[]
+}
+
+// Helper function to get assigned pillar for a must-win
+const getAssignedPillar = (mustWinId: number): PillarAssignment | null => {
+  const stored = localStorage.getItem(STORAGE_KEY)
+  if (!stored) return null
+  
+  try {
+    const pillars: PillarAssignment[] = JSON.parse(stored)
+    return pillars.find(pillar => pillar.assignedWins.includes(mustWinId)) || null
+  } catch (e) {
+    console.error('Failed to parse pillar assignments:', e)
+    return null
+  }
+}
+
+// Helper function to get all pillars with their assigned wins count
+const getPillarsWithWinCount = () => {
+  const stored = localStorage.getItem(STORAGE_KEY)
+  if (!stored) return []
+  
+  try {
+    const pillars: PillarAssignment[] = JSON.parse(stored)
+    return pillars.map(pillar => ({
+      id: pillar.id,
+      number: pillar.number,
+      title: pillar.title,
+      winsCount: pillar.assignedWins.length
+    }))
+  } catch (e) {
+    console.error('Failed to parse pillar assignments:', e)
+    return []
+  }
+}
 
 // Mock data - will be replaced with API calls
 const mockData = {
@@ -109,7 +151,10 @@ const mockData = {
 }
 
 const Dashboard = () => {
-  const [selectedWin, setSelectedWin] = useState('Win-1')
+  const [selectedWin, setSelectedWin] = useState('all')
+  
+  // Get pillars with actual win counts from localStorage
+  const strategyPillarsWithWins = getPillarsWithWinCount()
 
   // Helper function to get activity status based on completed tasks
   const getActivityStatus = (totalTasks: number, completedTasks: number): 'on-track' | 'in-progress' | 'needs-attention' => {
@@ -193,21 +238,39 @@ const Dashboard = () => {
       <div>
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Strategic Pillars</h2>
         <div className="grid grid-cols-3 gap-4">
-          {mockData.strategyPillars.map((pillar) => (
-            <div key={pillar.id} className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-              <h3 className="font-semibold text-gray-900 mb-2">{pillar.title}</h3>
-              <div className="flex items-center gap-2 text-sm">
-                <span className="font-bold text-gray-900">{pillar.winsCount}-win{pillar.winsCount > 1 ? 's' : ''}</span>
-                <div className="flex items-center gap-1">
-                  {[...Array(pillar.winsCount)].map((_, idx) => (
-                    <svg key={idx} className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2l2.4 7.4h7.6l-6 4.6 2.3 7-6.3-4.7-6.3 4.7 2.3-7-6-4.6h7.6z"/>
-                    </svg>
-                  ))}
+          {strategyPillarsWithWins.length > 0 ? (
+            strategyPillarsWithWins.map((pillar) => (
+              <div key={pillar.id} className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+                <h3 className="font-semibold text-gray-900 mb-2">{pillar.title}</h3>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="font-bold text-gray-900">{pillar.winsCount}-win{pillar.winsCount !== 1 ? 's' : ''}</span>
+                  <div className="flex items-center gap-1">
+                    {[...Array(Math.min(pillar.winsCount, 5))].map((_, idx) => (
+                      <svg key={idx} className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2l2.4 7.4h7.6l-6 4.6 2.3 7-6.3-4.7-6.3 4.7 2.3-7-6-4.6h7.6z"/>
+                      </svg>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            mockData.strategyPillars.map((pillar) => (
+              <div key={pillar.id} className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+                <h3 className="font-semibold text-gray-900 mb-2">{pillar.title}</h3>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="font-bold text-gray-900">{pillar.winsCount}-win{pillar.winsCount > 1 ? 's' : ''}</span>
+                  <div className="flex items-center gap-1">
+                    {[...Array(pillar.winsCount)].map((_, idx) => (
+                      <svg key={idx} className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2l2.4 7.4h7.6l-6 4.6 2.3 7-6.3-4.7-6.3 4.7 2.3-7-6-4.6h7.6z"/>
+                      </svg>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
@@ -215,49 +278,65 @@ const Dashboard = () => {
       <div>
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Must-Wins</h2>
         <div className="grid grid-cols-2 gap-4">
-          {mockData.mustWins.map((win) => (
-            <div key={win.id} className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-yellow-500 mt-0.5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2L8 8l-6 1 4.5 4L5.5 19 12 15.5 18.5 19l-1-6L22 9l-6-1z"/>
-                  </svg>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{win.title}</h3>
-                    <p className="text-sm text-gray-500">Total Key Activities: {win.activitiesCount}</p>
+          {mockData.mustWins.map((win) => {
+            const assignedPillar = getAssignedPillar(win.id)
+            
+            return (
+              <div key={win.id} className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-yellow-500 mt-0.5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2L8 8l-6 1 4.5 4L5.5 19 12 15.5 18.5 19l-1-6L22 9l-6-1z"/>
+                    </svg>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{win.title}</h3>
+                      <p className="text-sm text-gray-500">Total Key Activities: {win.activitiesCount}</p>
+                      
+                      {/* Assigned Pillar Badge */}
+                      {assignedPillar && (
+                        <div className="mt-2">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Strategic Pillar {assignedPillar.number}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <StatusBadge status={win.status} />
+                </div>
+                
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <ProgressBar progress={win.progress} status={win.status} showPercentage={false} />
+                    <span className="text-sm font-medium text-gray-600 ml-3">{win.progress}%</span>
                   </div>
                 </div>
-                <StatusBadge status={win.status} />
-              </div>
-              
-              <div className="mb-4">
-                <div className="flex items-center justify-between mb-2">
-                  <ProgressBar progress={win.progress} status={win.status} showPercentage={false} />
-                  <span className="text-sm font-medium text-gray-600 ml-3">{win.progress}%</span>
-                </div>
-              </div>
 
-              <div className="flex items-center justify-between text-sm text-gray-600">
-                <div className="flex items-center gap-1">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <span>Deadline: {win.deadline}</span>
-                </div>
-                <div className="flex items-center -space-x-2">
-                  {win.assignees.map((assignee, idx) => (
-                    <div 
-                      key={idx} 
-                      className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-white border-2 border-white"
-                      title={assignee.name}
-                    >
-                      {assignee.avatar}
-                    </div>
-                  ))}
+                <div className="flex items-center justify-between text-sm text-gray-600">
+                  <div className="flex items-center gap-1">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span>Deadline: {win.deadline}</span>
+                  </div>
+                  <div className="flex items-center -space-x-2">
+                    {win.assignees.map((assignee, idx) => (
+                      <div 
+                        key={idx} 
+                        className="w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center text-xs font-bold text-white border-2 border-white"
+                        title={assignee.name}
+                      >
+                        {assignee.avatar}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
 
