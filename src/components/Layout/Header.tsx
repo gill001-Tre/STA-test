@@ -19,7 +19,7 @@ const Header = () => {
     console.log('Logout - will be implemented with SSO')
   }
 
-  const years = [2024, 2025, 2026, 2027, 2028]
+  const years = [2026, 2027, 2028]
 
   return (
     <header className="bg-primary text-white">
@@ -33,28 +33,33 @@ const Header = () => {
             <span className="text-xl font-semibold">Tre Strategy Tracker</span>
           </Link>
 
-          {/* Navigation */}
-          <nav className="hidden md:flex space-x-6">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`hover:text-gray-200 transition-colors ${
-                  location.pathname === item.path ? 'border-b-2 border-white' : ''
-                }`}
-              >
-                {item.name}
-              </Link>
-            ))}
-          </nav>
+          {/* Right side - Navigation, Year Selector, and Profile */}
+          <div className="flex items-center space-x-6">
+            {/* Navigation */}
+            <nav className="hidden md:flex space-x-6">
+              {navItems.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`hover:text-gray-200 transition-colors ${
+                    location.pathname === item.path ? 'border-b-2 border-white' : ''
+                  }`}
+                >
+                  {item.name}
+                </Link>
+              ))}
+            </nav>
 
-          {/* Right side */}
-          <div className="flex items-center space-x-4">
             {/* Year Selector */}
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="bg-white text-gray-900 px-4 py-2 rounded-lg border-none outline-none cursor-pointer"
+              className="bg-white text-gray-900 px-3 py-1.5 pr-8 rounded-lg border-none outline-none cursor-pointer appearance-none bg-no-repeat bg-right"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+                backgroundPosition: 'right 0.5rem center',
+                backgroundSize: '1.25rem'
+              }}
             >
               {years.map((year) => (
                 <option key={year} value={year}>
@@ -67,10 +72,10 @@ const Header = () => {
             <div className="relative">
               <button
                 onClick={handleLogout}
-                className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-primary hover:bg-gray-100 transition-colors"
+                className="w-9 h-9 bg-white rounded-full flex items-center justify-center text-primary hover:bg-gray-100 transition-colors"
                 title="User Profile"
               >
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                 </svg>
               </button>

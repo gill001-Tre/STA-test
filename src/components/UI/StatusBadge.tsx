@@ -1,9 +1,10 @@
 interface StatusBadgeProps {
   status: 'on-track' | 'in-progress' | 'needs-attention'
   className?: string
+  variant?: 'horizontal' | 'vertical-ribbon'
 }
 
-const StatusBadge = ({ status, className = '' }: StatusBadgeProps) => {
+const StatusBadge = ({ status, className = '', variant = 'horizontal' }: StatusBadgeProps) => {
   const getStatusConfig = () => {
     switch (status) {
       case 'on-track':
@@ -29,9 +30,19 @@ const StatusBadge = ({ status, className = '' }: StatusBadgeProps) => {
 
   const config = getStatusConfig()
 
+  if (variant === 'vertical-ribbon') {
+    return (
+      <div 
+        className={`inline-flex items-center justify-center px-3 py-2 text-[11px] font-medium ${config.bgColor} ${config.textColor} ${className}`}
+      >
+        <span>{config.label}</span>
+      </div>
+    )
+  }
+
   return (
     <span 
-      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${config.bgColor} ${config.textColor} ${className}`}
+      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${config.bgColor} ${config.textColor} ${className}`}
     >
       {config.label}
     </span>
