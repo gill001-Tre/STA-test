@@ -1,17 +1,34 @@
 import { Link, useLocation } from 'react-router-dom'
 // import { useMsal } from '@azure/msal-react'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
 const Header = () => {
   const location = useLocation()
   // const { instance, accounts } = useMsal()
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [isPillarsDropdownOpen, setIsPillarsDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsPillarsDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const navItems = [
     { name: 'Strategic Overview', path: '/dashboard' },
-    { name: 'Strategy Pillars', path: '/strategy-pillars' },
     { name: 'Must-wins', path: '/must-wins' },
     { name: 'Key Activities', path: '/key-activities' },
+  ]
+
+  const pillarsSubMenu = [
+    { name: 'Create Strategy Pillar', path: '/strategy-pillars/create' },
+    { name: 'Show all Strategies', path: '/strategy-pillars' },
   ]
 
   const handleLogout = () => {
@@ -48,6 +65,42 @@ const Header = () => {
                   {item.name}
                 </Link>
               ))}
+              
+              {/* Strategic Pillars with Dropdown */}
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setIsPillarsDropdownOpen(!isPillarsDropdownOpen)}
+                  className={`hover:text-gray-200 transition-colors flex items-center gap-1 ${
+                    location.pathname.includes('/strategy-pillars') ? 'border-b-2 border-white' : ''
+                  }`}
+                >
+                  Strategic Pillars
+                  <svg 
+                    className={`w-4 h-4 transition-transform ${isPillarsDropdownOpen ? 'rotate-180' : ''}`} 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {/* Dropdown Menu */}
+                {isPillarsDropdownOpen && (
+                  <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 z-50">
+                    {pillarsSubMenu.map((item) => (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        onClick={() => setIsPillarsDropdownOpen(false)}
+                        className="block px-4 py-2 text-gray-800 hover:bg-orange-50 hover:text-primary transition-colors"
+                      >
+                        {item.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             </nav>
 
             {/* Year Selector */}

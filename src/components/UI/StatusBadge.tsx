@@ -16,7 +16,7 @@ const StatusBadge = ({ status, className = '', variant = 'horizontal' }: StatusB
       case 'in-progress':
         return {
           label: 'In Progress',
-          bgColor: 'bg-yellow-500',
+          bgColor: 'bg-status-inProgress',
           textColor: 'text-white'
         }
       case 'needs-attention':
