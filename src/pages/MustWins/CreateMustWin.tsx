@@ -50,7 +50,6 @@ const CreateMustWin = () => {
         {/* Form Card */}
         <div className="bg-white rounded-lg shadow-sm p-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-6">Create New Must-Win</h2>
-          <p className="text-sm text-gray-600 mb-6">Define your new Must-win deployment heads</p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Year */}

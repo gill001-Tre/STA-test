@@ -12,7 +12,9 @@ import EditMustWin from './pages/MustWins/EditMustWin'
 import UpdateMustWinProgress from './pages/MustWins/UpdateMustWinProgress'
 import KeyActivities from './pages/KeyActivities/KeyActivities'
 import CreateKeyActivity from './pages/KeyActivities/CreateKeyActivity'
+import UpdateKeyActivity from './pages/KeyActivities/UpdateKeyActivity'
 import KeyActivityDetail from './pages/KeyActivities/KeyActivityDetail'
+import UpdateKeyActivityProgress from './pages/KeyActivities/UpdateKeyActivityProgress'
 import SubTasks from './pages/SubTasks/SubTasks'
 import CreateSubTask from './pages/SubTasks/CreateSubTask'
 import UpdateSubTaskProgress from './pages/SubTasks/UpdateSubTaskProgress'
@@ -40,7 +42,9 @@ function App() {
           {/* Key Activities Routes */}
           <Route path="/key-activities" element={<KeyActivities />} />
           <Route path="/key-activities/create" element={<CreateKeyActivity />} />
+          <Route path="/key-activities/update" element={<UpdateKeyActivity />} />
           <Route path="/key-activities/:id" element={<KeyActivityDetail />} />
+          <Route path="/key-activities/progress" element={<UpdateKeyActivityProgress />} />
           
           {/* Sub-tasks Routes */}
           <Route path="/sub-tasks" element={<SubTasks />} />

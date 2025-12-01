@@ -8,8 +8,10 @@ const Header = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [isPillarsDropdownOpen, setIsPillarsDropdownOpen] = useState(false)
   const [isMustWinsDropdownOpen, setIsMustWinsDropdownOpen] = useState(false)
+  const [isKeyActivitiesDropdownOpen, setIsKeyActivitiesDropdownOpen] = useState(false)
   const pillarsDropdownRef = useRef<HTMLDivElement>(null)
   const mustWinsDropdownRef = useRef<HTMLDivElement>(null)
+  const keyActivitiesDropdownRef = useRef<HTMLDivElement>(null)
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -20,6 +22,9 @@ const Header = () => {
       if (mustWinsDropdownRef.current && !mustWinsDropdownRef.current.contains(event.target as Node)) {
         setIsMustWinsDropdownOpen(false)
       }
+      if (keyActivitiesDropdownRef.current && !keyActivitiesDropdownRef.current.contains(event.target as Node)) {
+        setIsKeyActivitiesDropdownOpen(false)
+      }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -27,7 +32,6 @@ const Header = () => {
 
   const navItems = [
     { name: 'Strategic Overview', path: '/dashboard' },
-    { name: 'Key Activities', path: '/key-activities' },
   ]
 
   const pillarsSubMenu = [
@@ -39,6 +43,15 @@ const Header = () => {
     { name: 'Create Win', path: '/must-wins/create' },
     { name: 'Show all Wins', path: '/must-wins' },
     { name: 'Update Win Progress', path: '/must-wins/progress' },
+  ]
+
+  const keyActivitiesSubMenu = [
+    { name: 'Create Key Activity', path: '/key-activities/create' },
+    { name: 'Show all Key Activities', path: '/key-activities' },
+    { name: 'Update Activity Progress', path: '/key-activities/progress' },
+    { name: 'Create Sub-task', path: '/sub-tasks/create' },
+    { name: 'Show all Sub-tasks', path: '/sub-tasks' },
+    { name: 'Update Sub-tasks', path: '/sub-tasks/update' },
   ]
 
   const handleLogout = () => {
@@ -75,6 +88,42 @@ const Header = () => {
                   {item.name}
                 </Link>
               ))}
+              
+              {/* Key Activities with Dropdown */}
+              <div className="relative" ref={keyActivitiesDropdownRef}>
+                <button
+                  onClick={() => setIsKeyActivitiesDropdownOpen(!isKeyActivitiesDropdownOpen)}
+                  className={`hover:text-gray-200 transition-colors flex items-center gap-1 ${
+                    location.pathname.includes('/key-activities') || location.pathname.includes('/sub-tasks') ? 'border-b-2 border-white' : ''
+                  }`}
+                >
+                  Key Activities
+                  <svg 
+                    className={`w-4 h-4 transition-transform ${isKeyActivitiesDropdownOpen ? 'rotate-180' : ''}`} 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {/* Dropdown Menu */}
+                {isKeyActivitiesDropdownOpen && (
+                  <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 z-50">
+                    {keyActivitiesSubMenu.map((item) => (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        onClick={() => setIsKeyActivitiesDropdownOpen(false)}
+                        className="block px-4 py-2 text-gray-800 hover:bg-orange-50 hover:text-primary transition-colors"
+                      >
+                        {item.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
               
               {/* Must-Wins with Dropdown */}
               <div className="relative" ref={mustWinsDropdownRef}>

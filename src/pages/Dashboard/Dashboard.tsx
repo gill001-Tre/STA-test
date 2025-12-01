@@ -6,6 +6,7 @@ import ProgressCircle from '@/components/UI/ProgressCircle'
 
 const STORAGE_KEY = 'strategy-pillars-assignments'
 const MUST_WINS_STORAGE_KEY = 'must-wins-data'
+const KEY_ACTIVITIES_STORAGE_KEY = 'key-activities-data'
 
 interface PillarAssignment {
   id: number
@@ -15,6 +16,12 @@ interface PillarAssignment {
 }
 
 interface MustWinProgress {
+  id: number
+  progress: number
+  status: 'on-track' | 'in-progress' | 'needs-attention'
+}
+
+interface KeyActivityProgress {
   id: number
   progress: number
   status: 'on-track' | 'in-progress' | 'needs-attention'
@@ -38,6 +45,28 @@ const getMustWinProgress = (mustWinId: number): MustWinProgress | null => {
     return null
   } catch (e) {
     console.error('Failed to parse must-wins data:', e)
+    return null
+  }
+}
+
+// Helper function to get key activity progress from localStorage
+const getKeyActivityProgress = (activityId: number): KeyActivityProgress | null => {
+  const stored = localStorage.getItem(KEY_ACTIVITIES_STORAGE_KEY)
+  if (!stored) return null
+  
+  try {
+    const activities = JSON.parse(stored)
+    const activity = activities.find((a: any) => a.id === activityId)
+    if (activity) {
+      return {
+        id: activity.id,
+        progress: activity.progress,
+        status: activity.status
+      }
+    }
+    return null
+  } catch (e) {
+    console.error('Failed to parse key-activities data:', e)
     return null
   }
 }
@@ -75,6 +104,27 @@ const getPillarsWithWinCount = () => {
   }
 }
 
+type Status = 'on-track' | 'in-progress' | 'needs-attention'
+
+interface MustWin {
+  id: number
+  title: string
+  progress: number
+  status: Status
+  activitiesCount: number
+  deadline: string
+  assignees: Array<{ name: string; avatar: string }>
+}
+
+interface KeyActivity {
+  id: number
+  title: string
+  totalTasks: number
+  completedTasks: number
+  status: Status
+  assignee: { name: string; avatar: string }
+}
+
 // Mock data - will be replaced with API calls
 const mockData = {
   stats: {
@@ -99,7 +149,7 @@ const mockData = {
       id: 1,
       title: 'IT Stack Modernization',
       progress: 70,
-      status: 'on-track' as const,
+      status: 'on-track' as Status,
       activitiesCount: 4,
       deadline: '2026-05-23',
       assignees: [
@@ -112,7 +162,7 @@ const mockData = {
       id: 2,
       title: 'Cybersecurity & Compliance',
       progress: 60,
-      status: 'in-progress' as const,
+      status: 'in-progress' as Status,
       activitiesCount: 3,
       deadline: '2026-02-12',
       assignees: [{ name: 'Fredrik Eder', avatar: 'FE' }]
@@ -121,7 +171,7 @@ const mockData = {
       id: 3,
       title: 'AI & Automation',
       progress: 70,
-      status: 'on-track' as const,
+      status: 'on-track' as Status,
       activitiesCount: 2,
       deadline: '2026-10-13',
       assignees: [
@@ -134,7 +184,7 @@ const mockData = {
       id: 4,
       title: '5G SA Launch',
       progress: 60,
-      status: 'in-progress' as const,
+      status: 'in-progress' as Status,
       activitiesCount: 3,
       deadline: '2026-02-13',
       assignees: [
@@ -146,47 +196,48 @@ const mockData = {
   keyActivities: [
     {
       id: 1,
-      title: 'CRM Transformation',
+      title: 'IT Stack Modernization',
       totalTasks: 5,
-      completedTasks: 5,
-      status: 'on-track' as const,
+      completedTasks: 4,
+      status: 'on-track' as Status,
       assignee: { name: 'Fredrik Eder', avatar: '' }
     },
     {
       id: 2,
-      title: 'Self Service Merger',
+      title: 'CRM Transformation',
       totalTasks: 5,
-      completedTasks: 0,
-      status: 'needs-attention' as const,
-      assignee: { name: 'Fredrik Eder', avatar: '' }
-    },
-    {
-      id: 3,
-      title: 'Cost Efficiency',
-      totalTasks: 7,
       completedTasks: 2,
-      status: 'needs-attention' as const,
+      status: 'in-progress' as Status,
       assignee: { name: 'Caroline Lundberg', avatar: '' }
     },
     {
-      id: 4,
-      title: 'Cloud Right Strategy',
+      id: 3,
+      title: 'Self Service Merger',
       totalTasks: 5,
-      completedTasks: 3,
-      status: 'needs-attention' as const,
+      completedTasks: 2,
+      status: 'in-progress' as Status,
       assignee: { name: 'Jennet Björn', avatar: '' }
+    },
+    {
+      id: 4,
+      title: 'Cost Efficiency Drive',
+      totalTasks: 5,
+      completedTasks: 0,
+      status: 'needs-attention' as Status,
+      assignee: { name: 'Fredrik Eder', avatar: '' }
     }
   ]
 }
 
 const Dashboard = () => {
   const [selectedWin, setSelectedWin] = useState('all')
-  const [mustWins, setMustWins] = useState(mockData.mustWins)
+  const [mustWins, setMustWins] = useState<MustWin[]>(mockData.mustWins)
+  const [keyActivities, setKeyActivities] = useState<KeyActivity[]>(mockData.keyActivities)
   
   // Get pillars with actual win counts from localStorage
   const strategyPillarsWithWins = getPillarsWithWinCount()
 
-  // Load must-win progress from localStorage on mount
+  // Load must-win and key activity progress from localStorage on mount
   useEffect(() => {
     const updatedMustWins = mockData.mustWins.map(win => {
       const progressData = getMustWinProgress(win.id)
@@ -200,6 +251,22 @@ const Dashboard = () => {
       return win
     })
     setMustWins(updatedMustWins)
+
+    // Load key activities progress from localStorage
+    const updatedKeyActivities = mockData.keyActivities.map(activity => {
+      const progressData = getKeyActivityProgress(activity.id)
+      if (progressData) {
+        // Calculate completed tasks based on progress percentage
+        const completedTasks = Math.round((progressData.progress / 100) * activity.totalTasks)
+        return {
+          ...activity,
+          completedTasks: completedTasks,
+          status: progressData.status
+        }
+      }
+      return activity
+    })
+    setKeyActivities(updatedKeyActivities)
   }, [])
 
   // Helper function to get activity status based on completed tasks
@@ -403,7 +470,7 @@ const Dashboard = () => {
         </div>
 
         <div className="space-y-3">
-          {mockData.keyActivities.map((activity) => {
+          {keyActivities.map((activity) => {
             const dynamicStatus = getActivityStatus(activity.totalTasks, activity.completedTasks)
             const progressPercentage = activity.totalTasks > 0 ? Math.round((activity.completedTasks / activity.totalTasks) * 100) : 0
             

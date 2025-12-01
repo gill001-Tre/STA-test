@@ -1,15 +1,18 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 interface KPI {
   name: string
   range: string
 }
 
-const CreateKeyActivity = () => {
+const UpdateKeyActivity = () => {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const activityId = searchParams.get('id')
+
   const [formData, setFormData] = useState({
-    year: new Date().getFullYear(),
+    year: 2026,
     title: '',
     assignedMustWin: '',
     assignToHead: '',
@@ -20,6 +23,46 @@ const CreateKeyActivity = () => {
   const [baselineKPIs, setBaselineKPIs] = useState<KPI[]>([{ name: '', range: '' }, { name: '', range: '' }])
   const [targetKPIs, setTargetKPIs] = useState<KPI[]>([{ name: '', range: '' }, { name: '', range: '' }])
   const [stretchKPIs, setStretchKPIs] = useState<KPI[]>([{ name: '', range: '' }, { name: '', range: '' }])
+
+  const years = [2026, 2027, 2028]
+
+  const mustWins = [
+    { id: 1, title: 'IT Stack Modernization' },
+    { id: 2, title: 'Cybersecurity & Compliance' },
+    { id: 3, title: 'AI & Automation' },
+    { id: 4, title: '5G SA Readiness' },
+  ]
+
+  // Load existing activity data
+  useEffect(() => {
+    if (activityId) {
+      // TODO: Fetch from Azure Table Storage
+      // Mock data for now
+      setFormData({
+        year: 2026,
+        title: 'CRM Transformation',
+        assignedMustWin: '1',
+        assignToHead: 'Fredrik Eder',
+        description: 'Reach tailgates of Apollo program',
+        deadline: '2026-02-04',
+      })
+      
+      setBaselineKPIs([
+        { name: '3IT In Development Progress', range: '75-100%' },
+        { name: 'E2E Testing Progress', range: '66-100%' }
+      ])
+      
+      setTargetKPIs([
+        { name: '3IT In Development Progress', range: '75-100%' },
+        { name: '', range: '' }
+      ])
+      
+      setStretchKPIs([
+        { name: '3IT In Development Progress', range: '75-100%' },
+        { name: '', range: '' }
+      ])
+    }
+  }, [activityId])
 
   const addKPI = (type: 'baseline' | 'target' | 'stretch') => {
     if (type === 'baseline') {
@@ -57,15 +100,6 @@ const CreateKeyActivity = () => {
     }
   }
 
-  const years = [2026, 2027, 2028]
-
-  const mustWins = [
-    { id: 1, title: 'IT Stack Modernization' },
-    { id: 2, title: 'Cybersecurity & Compliance' },
-    { id: 3, title: 'AI & Automation' },
-    { id: 4, title: '5G SA Readiness' },
-  ]
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const activityData = {
@@ -74,8 +108,8 @@ const CreateKeyActivity = () => {
       targetKPIs: targetKPIs.filter(kpi => kpi.name || kpi.range),
       stretchKPIs: stretchKPIs.filter(kpi => kpi.name || kpi.range),
     }
-    console.log('Creating key activity:', activityData)
-    // TODO: Save to Azure Table Storage
+    console.log('Updating key activity:', activityData)
+    // TODO: Update in Azure Table Storage
     navigate('/key-activities')
   }
 
@@ -88,13 +122,14 @@ const CreateKeyActivity = () => {
       <div className="container mx-auto px-4 max-w-6xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Key Activity</h1>
-          <p className="text-gray-600">Create and assign key activity to head of department</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Update Key Activity</h1>
+          <p className="text-gray-600">Edit key activity details and update KPI information</p>
         </div>
 
         {/* Form Card */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Create New Key Activity</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">Edit Key Activity</h2>
+          <p className="text-sm text-gray-600 mb-8">Update the key activity information and save changes</p>
 
           <form onSubmit={handleSubmit}>
             <div className="space-y-6">
@@ -382,7 +417,7 @@ const CreateKeyActivity = () => {
                 type="submit"
                 className="px-6 py-2.5 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
               >
-                Create Key Activity
+                Save Changes
               </button>
             </div>
           </form>
@@ -392,4 +427,4 @@ const CreateKeyActivity = () => {
   )
 }
 
-export default CreateKeyActivity
+export default UpdateKeyActivity
