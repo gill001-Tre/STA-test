@@ -1,14 +1,88 @@
 import { useParams, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+
+interface SubTask {
+  id: number
+  number: string
+  title: string
+  description: string
+  deadline: string
+  assignedTo: string
+  assignedToAvatar: string
+  keyActivity: string
+  progress?: number
+  completed?: boolean
+}
 
 const KeyActivityDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const [subTasks, setSubTasks] = useState<SubTask[]>([])
 
   // Mock data - TODO: Fetch from Azure Table Storage
+  const keyActivities = [
+    { id: 1, title: 'CRM Transformation', number: '01' },
+    { id: 2, title: 'Self Service Merger', number: '02' },
+    { id: 3, title: 'Cost Efficiency', number: '03' },
+    { id: 4, title: 'Cloud Right Strategy', number: '04' }
+  ]
+
+  // All sub-tasks - TODO: Replace with actual data from Azure Table Storage
+  const allSubTasks: SubTask[] = [
+    {
+      id: 1,
+      number: '01',
+      title: 'Database Migration',
+      description: 'Migrate legacy database to cloud infrastructure',
+      deadline: '2026-02-15',
+      assignedTo: 'Fredrik Eder',
+      assignedToAvatar: 'FE',
+      keyActivity: 'CRM Transformation',
+      progress: 65,
+      completed: true
+    },
+    {
+      id: 2,
+      number: '02',
+      title: 'API Integration',
+      description: 'Integrate third-party APIs for CRM system',
+      deadline: '2026-03-10',
+      assignedTo: 'Caroline Lundberg',
+      assignedToAvatar: 'CL',
+      keyActivity: 'CRM Transformation',
+      progress: 45,
+      completed: false
+    },
+    {
+      id: 3,
+      number: '03',
+      title: 'User Testing Phase',
+      description: 'Conduct user acceptance testing for new features',
+      deadline: '2026-04-05',
+      assignedTo: 'Jennet Björn',
+      assignedToAvatar: 'JB',
+      keyActivity: 'Self Service Merger',
+      progress: 80,
+      completed: true
+    },
+    {
+      id: 4,
+      number: '04',
+      title: 'Cost Analysis Report',
+      description: 'Analyze and report current infrastructure costs',
+      deadline: '2026-02-20',
+      assignedTo: 'Fredrik Eder',
+      assignedToAvatar: 'FE',
+      keyActivity: 'Cost Efficiency',
+      progress: 20,
+      completed: false
+    }
+  ]
+
   const activity = {
     id: Number(id),
-    number: '01',
-    title: 'IT Stack Modernization',
+    number: keyActivities[Number(id) - 1]?.number || '01',
+    title: keyActivities[Number(id) - 1]?.title || 'IT Stack Modernization',
     description: 'Implement Amdocs effectively within 3 Scandinavia by strategically align business and technology goals, followed by the setup of governance frameworks, such as joint steering committees and design authority forums, to oversee execution and manage risks. The focus is on leveraging the opportunity to eliminate silos, reduce technical debt, and increase collaboration, aiming to bring operational efficiency to the entire organization.All of Technology will be heavily engaged in Apollo for the entire 2026, in project governance, discovery, design, development, quality assurance, migration planning and more. Approx. 150 existing assets will need to be reworked to fit the target architecture, and a new e-commerce solution for both Denmark and Sweden, based on Amdocs Commerce, will be built.',
     owner: 'Fredrik Eder',
     ownerAvatar: 'FE',
@@ -28,20 +102,20 @@ const KeyActivityDetail = () => {
         { name: '3IT PI Development Progress (full scope)', range: '75-100%' },
         { name: 'E2E Testing Progress (full scope)', range: '66-100%' }
       ]
-    },
-    subTasks: [
-      { id: 1, title: 'Setup governance framework', completed: true },
-      { id: 2, title: 'Design authority forums', completed: true },
-      { id: 3, title: 'Technical debt assessment', completed: true },
-      { id: 4, title: 'Migration planning phase 1', completed: false },
-      { id: 5, title: 'E-commerce solution design', completed: false },
-      { id: 6, title: 'Quality assurance setup', completed: false },
-      { id: 7, title: 'Asset rework planning', completed: false }
-    ]
+    }
   }
 
-  const completedSubTasks = activity.subTasks.filter(task => task.completed).length
-  const totalSubTasks = activity.subTasks.length
+  // Filter sub-tasks for this specific key activity
+  useEffect(() => {
+    const activityTitle = activity.title
+    const filteredSubTasks = allSubTasks.filter(
+      task => task.keyActivity === activityTitle || task.keyActivity.includes(activityTitle)
+    )
+    setSubTasks(filteredSubTasks)
+  }, [id])
+
+  const completedSubTasks = subTasks.filter(task => task.completed || (task.progress && task.progress >= 80)).length
+  const totalSubTasks = subTasks.length
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -141,25 +215,53 @@ const KeyActivityDetail = () => {
               </div>
 
               <div className="space-y-2">
-                {activity.subTasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${
-                      task.completed ? 'bg-primary' : 'bg-gray-200'
-                    }`}>
-                      {task.completed && (
-                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </div>
-                    <span className={`flex-1 ${task.completed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
-                      {task.title}
-                    </span>
+                {subTasks.length > 0 ? (
+                  subTasks.map((task) => {
+                    const isCompleted = task.completed || (task.progress && task.progress >= 80)
+                    return (
+                      <div
+                        key={task.id}
+                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                        onClick={() => navigate(`/sub-tasks/update?id=${task.id}`)}
+                      >
+                        <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${
+                          isCompleted ? 'bg-primary' : 'bg-gray-200'
+                        }`}>
+                          {isCompleted && (
+                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <span className={`block ${isCompleted ? 'text-gray-500 line-through' : 'text-gray-900 font-medium'}`}>
+                            {task.title}
+                          </span>
+                          <span className="text-xs text-gray-500">{task.description}</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-gray-500">
+                          <div 
+                            className="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center text-white font-semibold"
+                            title={task.assignedTo}
+                          >
+                            {task.assignedToAvatar}
+                          </div>
+                          <span className="text-gray-600">{task.deadline}</span>
+                        </div>
+                      </div>
+                    )
+                  })
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <p className="mb-2">No sub-tasks yet for this key activity</p>
+                    <button
+                      onClick={() => navigate('/sub-tasks/create')}
+                      className="text-primary hover:text-orange-600 font-medium text-sm"
+                    >
+                      + Create a sub-task
+                    </button>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>

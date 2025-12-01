@@ -1,9 +1,11 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
-const CreateSubTask = () => {
+const UpdateSubTask = () => {
   const navigate = useNavigate()
-  
+  const [searchParams] = useSearchParams()
+  const subTaskId = searchParams.get('id')
+
   const [formData, setFormData] = useState({
     keyActivity: '',
     title: '',
@@ -19,9 +21,24 @@ const CreateSubTask = () => {
     { id: 4, name: 'Key Activity 4' }
   ]
 
+  // Load existing sub-task data
+  useEffect(() => {
+    if (subTaskId) {
+      // TODO: Fetch from Azure Table Storage
+      // Mock data for now based on subTaskId
+      setFormData({
+        keyActivity: 'Key Activity 1',
+        title: 'Database Migration',
+        description: 'Migrate legacy database to cloud infrastructure',
+        assignToHead: 'Fredrik Eder',
+        deadline: '2026-02-15',
+      })
+    }
+  }, [subTaskId])
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Sub-task data:', formData)
+    console.log('Updated sub-task data:', formData)
     // TODO: Save to Azure Table Storage
     navigate('/sub-tasks')
   }
@@ -35,8 +52,8 @@ const CreateSubTask = () => {
       <div className="container mx-auto px-4 max-w-3xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Create a new sub-task</h1>
-          <p className="text-gray-600">Add a new sub-task and assign to TeamChef</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Update sub-task</h1>
+          <p className="text-gray-600">Edit sub-task details</p>
         </div>
 
         {/* Form */}
@@ -53,7 +70,7 @@ const CreateSubTask = () => {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 required
               >
-                <option value="">Key Activity 1</option>
+                <option value="">Select Key Activity</option>
                 {keyActivities.map((activity) => (
                   <option key={activity.id} value={activity.name}>
                     {activity.name}
@@ -134,7 +151,7 @@ const CreateSubTask = () => {
                 type="submit"
                 className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
               >
-                Create Sub-task
+                Save Changes
               </button>
             </div>
           </form>
@@ -144,4 +161,4 @@ const CreateSubTask = () => {
   )
 }
 
-export default CreateSubTask
+export default UpdateSubTask

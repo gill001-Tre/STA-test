@@ -120,7 +120,7 @@ const EditStrategyPillar = () => {
   }
 
   const handleCancel = () => {
-    navigate('/strategy-pillars')
+    navigate('/dashboard')
   }
 
   return (

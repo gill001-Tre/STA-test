@@ -35,7 +35,7 @@ const CreateMustWin = () => {
   }
 
   const handleCancel = () => {
-    navigate('/must-wins')
+    navigate('/dashboard')
   }
 
   return (

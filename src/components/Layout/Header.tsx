@@ -51,7 +51,7 @@ const Header = () => {
     { name: 'Update Activity Progress', path: '/key-activities/progress' },
     { name: 'Create Sub-task', path: '/sub-tasks/create' },
     { name: 'Show all Sub-tasks', path: '/sub-tasks' },
-    { name: 'Update Sub-tasks', path: '/sub-tasks/update' },
+    { name: 'Update Subtask Progress', path: '/sub-tasks/progress' },
   ]
 
   const handleLogout = () => {
