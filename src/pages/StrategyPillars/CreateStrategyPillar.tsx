@@ -18,7 +18,7 @@ const CreateStrategyPillar = () => {
   }
 
   const handleCancel = () => {
-    navigate('/strategy-pillars')
+    navigate('/dashboard')
   }
 
   const years = [2026, 2027, 2028]

@@ -80,7 +80,7 @@ const CreateKeyActivity = () => {
   }
 
   const handleCancel = () => {
-    navigate('/key-activities')
+    navigate('/dashboard')
   }
 
   return (

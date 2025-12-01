@@ -17,6 +17,7 @@ import KeyActivityDetail from './pages/KeyActivities/KeyActivityDetail'
 import UpdateKeyActivityProgress from './pages/KeyActivities/UpdateKeyActivityProgress'
 import SubTasks from './pages/SubTasks/SubTasks'
 import CreateSubTask from './pages/SubTasks/CreateSubTask'
+import UpdateSubTask from './pages/SubTasks/UpdateSubTask'
 import UpdateSubTaskProgress from './pages/SubTasks/UpdateSubTaskProgress'
 
 function App() {
@@ -49,7 +50,8 @@ function App() {
           {/* Sub-tasks Routes */}
           <Route path="/sub-tasks" element={<SubTasks />} />
           <Route path="/sub-tasks/create" element={<CreateSubTask />} />
-          <Route path="/sub-tasks/:activityId/progress" element={<UpdateSubTaskProgress />} />
+          <Route path="/sub-tasks/update" element={<UpdateSubTask />} />
+          <Route path="/sub-tasks/progress" element={<UpdateSubTaskProgress />} />
           
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

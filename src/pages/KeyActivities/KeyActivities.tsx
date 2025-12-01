@@ -162,11 +162,13 @@ const KeyActivities = () => {
                     {/* Assigned To */}
                     <div className="text-center">
                       <div className="text-xs text-gray-500 mb-1">Assigned to</div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center text-xs font-semibold">
+                      <div className="flex items-center justify-center">
+                        <div 
+                          className="w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center text-xs font-semibold cursor-pointer"
+                          title={activity.assignedTo}
+                        >
                           {activity.assignedToAvatar}
                         </div>
-                        <span className="text-sm font-medium text-gray-900">{activity.assignedTo}</span>
                       </div>
                     </div>
 

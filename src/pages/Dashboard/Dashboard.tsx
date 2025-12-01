@@ -127,13 +127,6 @@ interface KeyActivity {
 
 // Mock data - will be replaced with API calls
 const mockData = {
-  stats: {
-    strategyPillars: 4,
-    mustWins: 3,
-    keyActivities: 12,
-    totalTasks: 50,
-    completedTasks: 20
-  },
   progressLevels: {
     onTrack: '> 60%',
     inProgress: '30 - 60%',
@@ -196,35 +189,35 @@ const mockData = {
   keyActivities: [
     {
       id: 1,
-      title: 'IT Stack Modernization',
-      totalTasks: 5,
-      completedTasks: 4,
-      status: 'on-track' as Status,
+      title: 'CRM Transformation',
+      totalTasks: 2,
+      completedTasks: 1,
+      status: 'in-progress' as Status,
       assignee: { name: 'Fredrik Eder', avatar: '' }
     },
     {
       id: 2,
-      title: 'CRM Transformation',
-      totalTasks: 5,
-      completedTasks: 2,
-      status: 'in-progress' as Status,
-      assignee: { name: 'Caroline Lundberg', avatar: '' }
-    },
-    {
-      id: 3,
       title: 'Self Service Merger',
-      totalTasks: 5,
-      completedTasks: 2,
-      status: 'in-progress' as Status,
+      totalTasks: 1,
+      completedTasks: 1,
+      status: 'on-track' as Status,
       assignee: { name: 'Jennet Björn', avatar: '' }
     },
     {
-      id: 4,
-      title: 'Cost Efficiency Drive',
-      totalTasks: 5,
+      id: 3,
+      title: 'Cost Efficiency',
+      totalTasks: 1,
       completedTasks: 0,
       status: 'needs-attention' as Status,
       assignee: { name: 'Fredrik Eder', avatar: '' }
+    },
+    {
+      id: 4,
+      title: 'Cloud Right Strategy',
+      totalTasks: 0,
+      completedTasks: 0,
+      status: 'needs-attention' as Status,
+      assignee: { name: 'Jonas Blom', avatar: '' }
     }
   ]
 }
@@ -236,6 +229,15 @@ const Dashboard = () => {
   
   // Get pillars with actual win counts from localStorage
   const strategyPillarsWithWins = getPillarsWithWinCount()
+  
+  // Calculate actual statistics
+  const totalPillars = strategyPillarsWithWins.length > 0 ? strategyPillarsWithWins.length : mockData.strategyPillars.length
+  const totalMustWins = mustWins.length
+  const totalKeyActivities = keyActivities.length
+  
+  // Calculate total sub-tasks and completed from all key activities
+  const totalSubTasks = keyActivities.reduce((sum, activity) => sum + activity.totalTasks, 0)
+  const completedSubTasks = keyActivities.reduce((sum, activity) => sum + activity.completedTasks, 0)
 
   // Load must-win and key activity progress from localStorage on mount
   useEffect(() => {
@@ -315,7 +317,7 @@ const Dashboard = () => {
               </svg>
             }
             label="Strategy Pillars"
-            value={mockData.stats.strategyPillars}
+            value={totalPillars}
           />
           <StatCard
             icon={
@@ -324,7 +326,7 @@ const Dashboard = () => {
               </svg>
             }
             label="Must wins"
-            value={mockData.stats.mustWins}
+            value={totalMustWins}
           />
           <StatCard
             icon={
@@ -333,7 +335,7 @@ const Dashboard = () => {
               </svg>
             }
             label="Key Activities"
-            value={mockData.stats.keyActivities}
+            value={totalKeyActivities}
           />
           <StatCard
             icon={
@@ -341,8 +343,8 @@ const Dashboard = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 7l2 2 4-4" />
               </svg>
             }
-            label="Total Tasks Done"
-            value={`${mockData.stats.completedTasks}/${mockData.stats.totalTasks}`}
+            label="Total Sub-tasks"
+            value={`${completedSubTasks}/${totalSubTasks}`}
           />
         </div>
       </div>

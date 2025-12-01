@@ -146,11 +146,13 @@ const MustWins = () => {
                   {/* Assigned To */}
                   <div className="text-center">
                     <div className="text-xs text-gray-500 mb-1">Assigned to</div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center text-xs font-semibold">
+                    <div className="flex items-center justify-center">
+                      <div 
+                        className="w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center text-xs font-semibold cursor-pointer"
+                        title={win.assignedTo}
+                      >
                         {win.assignedTo.split(' ').map(n => n[0]).join('')}
                       </div>
-                      <span className="text-sm font-medium text-gray-900">{win.assignedTo}</span>
                     </div>
                   </div>
 

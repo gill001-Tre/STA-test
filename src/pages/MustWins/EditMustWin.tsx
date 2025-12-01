@@ -95,7 +95,7 @@ const EditMustWin = () => {
   }
 
   const handleCancel = () => {
-    navigate('/must-wins')
+    navigate('/dashboard')
   }
 
   return (
