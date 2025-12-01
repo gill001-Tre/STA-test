@@ -5,12 +5,41 @@ import StatusBadge from '@/components/UI/StatusBadge'
 import ProgressCircle from '@/components/UI/ProgressCircle'
 
 const STORAGE_KEY = 'strategy-pillars-assignments'
+const MUST_WINS_STORAGE_KEY = 'must-wins-data'
 
 interface PillarAssignment {
   id: number
   number: string
   title: string
   assignedWins: number[]
+}
+
+interface MustWinProgress {
+  id: number
+  progress: number
+  status: 'on-track' | 'in-progress' | 'needs-attention'
+}
+
+// Helper function to get must-win progress from localStorage
+const getMustWinProgress = (mustWinId: number): MustWinProgress | null => {
+  const stored = localStorage.getItem(MUST_WINS_STORAGE_KEY)
+  if (!stored) return null
+  
+  try {
+    const mustWins = JSON.parse(stored)
+    const mustWin = mustWins.find((w: any) => w.id === mustWinId)
+    if (mustWin) {
+      return {
+        id: mustWin.id,
+        progress: mustWin.progress,
+        status: mustWin.status
+      }
+    }
+    return null
+  } catch (e) {
+    console.error('Failed to parse must-wins data:', e)
+    return null
+  }
 }
 
 // Helper function to get assigned pillar for a must-win
@@ -152,9 +181,26 @@ const mockData = {
 
 const Dashboard = () => {
   const [selectedWin, setSelectedWin] = useState('all')
+  const [mustWins, setMustWins] = useState(mockData.mustWins)
   
   // Get pillars with actual win counts from localStorage
   const strategyPillarsWithWins = getPillarsWithWinCount()
+
+  // Load must-win progress from localStorage on mount
+  useEffect(() => {
+    const updatedMustWins = mockData.mustWins.map(win => {
+      const progressData = getMustWinProgress(win.id)
+      if (progressData) {
+        return {
+          ...win,
+          progress: progressData.progress,
+          status: progressData.status
+        }
+      }
+      return win
+    })
+    setMustWins(updatedMustWins)
+  }, [])
 
   // Helper function to get activity status based on completed tasks
   const getActivityStatus = (totalTasks: number, completedTasks: number): 'on-track' | 'in-progress' | 'needs-attention' => {
@@ -278,7 +324,7 @@ const Dashboard = () => {
       <div>
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Must-Wins</h2>
         <div className="grid grid-cols-2 gap-4">
-          {mockData.mustWins.map((win) => {
+          {mustWins.map((win) => {
             const assignedPillar = getAssignedPillar(win.id)
             
             return (
@@ -389,7 +435,7 @@ const Dashboard = () => {
                         {activity.completedTasks}/{activity.totalTasks} tasks
                       </span>
                     </div>
-                    <div className="relative">
+                    <div className="relative flex items-center justify-center">
                       <ProgressCircle
                         total={activity.totalTasks}
                         completed={activity.completedTasks}
@@ -397,7 +443,7 @@ const Dashboard = () => {
                         strokeWidth={4}
                       />
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-[10px] font-bold text-gray-900">{progressPercentage}%</span>
+                        <span className="text-[10px] font-bold text-gray-900 leading-none">{progressPercentage}%</span>
                       </div>
                     </div>
                   </div>
