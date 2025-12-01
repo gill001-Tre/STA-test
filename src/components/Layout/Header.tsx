@@ -7,13 +7,18 @@ const Header = () => {
   // const { instance, accounts } = useMsal()
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [isPillarsDropdownOpen, setIsPillarsDropdownOpen] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
+  const [isMustWinsDropdownOpen, setIsMustWinsDropdownOpen] = useState(false)
+  const pillarsDropdownRef = useRef<HTMLDivElement>(null)
+  const mustWinsDropdownRef = useRef<HTMLDivElement>(null)
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (pillarsDropdownRef.current && !pillarsDropdownRef.current.contains(event.target as Node)) {
         setIsPillarsDropdownOpen(false)
+      }
+      if (mustWinsDropdownRef.current && !mustWinsDropdownRef.current.contains(event.target as Node)) {
+        setIsMustWinsDropdownOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -22,13 +27,18 @@ const Header = () => {
 
   const navItems = [
     { name: 'Strategic Overview', path: '/dashboard' },
-    { name: 'Must-wins', path: '/must-wins' },
     { name: 'Key Activities', path: '/key-activities' },
   ]
 
   const pillarsSubMenu = [
     { name: 'Create Strategy Pillar', path: '/strategy-pillars/create' },
     { name: 'Show all Strategies', path: '/strategy-pillars' },
+  ]
+
+  const mustWinsSubMenu = [
+    { name: 'Create Win', path: '/must-wins/create' },
+    { name: 'Show all Wins', path: '/must-wins' },
+    { name: 'Update Win Progress', path: '/must-wins/progress' },
   ]
 
   const handleLogout = () => {
@@ -66,8 +76,44 @@ const Header = () => {
                 </Link>
               ))}
               
+              {/* Must-Wins with Dropdown */}
+              <div className="relative" ref={mustWinsDropdownRef}>
+                <button
+                  onClick={() => setIsMustWinsDropdownOpen(!isMustWinsDropdownOpen)}
+                  className={`hover:text-gray-200 transition-colors flex items-center gap-1 ${
+                    location.pathname.includes('/must-wins') ? 'border-b-2 border-white' : ''
+                  }`}
+                >
+                  Must-Wins
+                  <svg 
+                    className={`w-4 h-4 transition-transform ${isMustWinsDropdownOpen ? 'rotate-180' : ''}`} 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {/* Dropdown Menu */}
+                {isMustWinsDropdownOpen && (
+                  <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 z-50">
+                    {mustWinsSubMenu.map((item) => (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        onClick={() => setIsMustWinsDropdownOpen(false)}
+                        className="block px-4 py-2 text-gray-800 hover:bg-orange-50 hover:text-primary transition-colors"
+                      >
+                        {item.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
               {/* Strategic Pillars with Dropdown */}
-              <div className="relative" ref={dropdownRef}>
+              <div className="relative" ref={pillarsDropdownRef}>
                 <button
                   onClick={() => setIsPillarsDropdownOpen(!isPillarsDropdownOpen)}
                   className={`hover:text-gray-200 transition-colors flex items-center gap-1 ${

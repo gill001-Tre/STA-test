@@ -1,8 +1,9 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 
-const CreateMustWin = () => {
+const EditMustWin = () => {
   const navigate = useNavigate()
+  const { id } = useParams()
   const [formData, setFormData] = useState({
     year: 2026,
     title: '',
@@ -18,6 +19,65 @@ const CreateMustWin = () => {
     'Operational Excellence & Agility'
   ]
 
+  // Mock data - will be replaced with Azure Table Storage
+  const mockMustWins = [
+    {
+      id: 1,
+      number: '01',
+      title: 'IT Stack Modernization',
+      description: '5G launch, HEO & ISO 27001 compliance, quantum readiness.',
+      deadline: '2026-03-01',
+      assignedTo: 'Peter Kim',
+      assignedPillars: [],
+      year: 2026
+    },
+    {
+      id: 2,
+      number: '02',
+      title: 'Cybersecurity & Compliance',
+      description: '5G launch, HEO & ISO 27001 compliance, quantum readiness.',
+      deadline: '2026-03-01',
+      assignedTo: 'Emily Chen',
+      assignedPillars: [],
+      year: 2026
+    },
+    {
+      id: 3,
+      number: '03',
+      title: 'AI & Automation',
+      description: 'AI capabilities; chat for provisioning; anomaly detection.',
+      deadline: '2026-02-02',
+      assignedTo: 'John Larking',
+      assignedPillars: [],
+      year: 2026
+    },
+    {
+      id: 4,
+      number: '04',
+      title: '5G SA Readiness',
+      description: 'Commercial 5G SA rollout, network APIs for monetization.',
+      deadline: '2026-01-01',
+      assignedTo: 'Javed Moh',
+      assignedPillars: [],
+      year: 2026
+    }
+  ]
+
+  useEffect(() => {
+    // Load existing Must-Win data
+    const mustWin = mockMustWins.find(win => win.id === Number(id))
+    if (mustWin) {
+      setFormData({
+        year: mustWin.year,
+        title: mustWin.title,
+        description: mustWin.description,
+        assignedPillars: mustWin.assignedPillars,
+        assignToHead: mustWin.assignedTo,
+        deadline: mustWin.deadline
+      })
+    }
+  }, [id])
+
   const handlePillarToggle = (pillar: string) => {
     setFormData(prev => ({
       ...prev,
@@ -29,8 +89,8 @@ const CreateMustWin = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Creating Must-Win:', formData)
-    // TODO: Save to Azure Table Storage
+    console.log('Updating Must-Win:', id, formData)
+    // TODO: Update in Azure Table Storage
     navigate('/must-wins')
   }
 
@@ -49,8 +109,8 @@ const CreateMustWin = () => {
 
         {/* Form Card */}
         <div className="bg-white rounded-lg shadow-sm p-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Create New Must-Win</h2>
-          <p className="text-sm text-gray-600 mb-6">Define your new Must-win deployment heads</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">Edit Must-Win</h2>
+          <p className="text-sm text-gray-600 mb-6">Update your Must-win details</p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Year */}
@@ -190,7 +250,7 @@ const CreateMustWin = () => {
                 type="submit"
                 className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
               >
-                Create Win
+                Save Changes
               </button>
             </div>
           </form>
@@ -200,4 +260,4 @@ const CreateMustWin = () => {
   )
 }
 
-export default CreateMustWin
+export default EditMustWin

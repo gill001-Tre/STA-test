@@ -178,10 +178,6 @@ const StrategyPillars = () => {
     }
   }
 
-  const handleBack = () => {
-    navigate('/strategy-pillars/create')
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4">
@@ -212,7 +208,7 @@ const StrategyPillars = () => {
           {pillars.map((pillar) => (
             <div
               key={pillar.id}
-              className="bg-white rounded-lg border-2 border-primary p-6 shadow-sm hover:shadow-md transition-shadow"
+              className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow"
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-4 flex-1">
@@ -265,7 +261,20 @@ const StrategyPillars = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="ml-4 flex-shrink-0">
+                <div className="ml-4 flex gap-2 flex-shrink-0">
+                  {/* Edit Button */}
+                  <button
+                    onClick={() => navigate(`/strategy-pillars/${pillar.id}/edit`)}
+                    className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                    title="Edit Pillar"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Edit
+                  </button>
+                  
+                  {/* Assign Win Button */}
                   <button
                     onClick={() => handleAssignWin(pillar.id)}
                     className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium">
@@ -279,17 +288,6 @@ const StrategyPillars = () => {
             </div>
           ))}
         </div>
-
-        {/* Back Button */}
-        <button
-          onClick={handleBack}
-          className="mt-8 flex items-center gap-2 text-gray-700 hover:text-gray-900 transition-colors"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          <span className="font-medium">Back</span>
-        </button>
       </div>
 
       {/* Assign Win Modal */}

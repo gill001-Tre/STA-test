@@ -5,8 +5,10 @@ import Layout from './components/Layout/Layout'
 import Dashboard from './pages/Dashboard/Dashboard'
 import StrategyPillars from './pages/StrategyPillars/StrategyPillars'
 import CreateStrategyPillar from './pages/StrategyPillars/CreateStrategyPillar'
+import EditStrategyPillar from './pages/StrategyPillars/EditStrategyPillar'
 import MustWins from './pages/MustWins/MustWins'
 import CreateMustWin from './pages/MustWins/CreateMustWin'
+import EditMustWin from './pages/MustWins/EditMustWin'
 import UpdateMustWinProgress from './pages/MustWins/UpdateMustWinProgress'
 import KeyActivities from './pages/KeyActivities/KeyActivities'
 import CreateKeyActivity from './pages/KeyActivities/CreateKeyActivity'
@@ -27,11 +29,13 @@ function App() {
           {/* Strategy Pillars Routes */}
           <Route path="/strategy-pillars" element={<StrategyPillars />} />
           <Route path="/strategy-pillars/create" element={<CreateStrategyPillar />} />
+          <Route path="/strategy-pillars/:id/edit" element={<EditStrategyPillar />} />
           
           {/* Must-Wins Routes */}
           <Route path="/must-wins" element={<MustWins />} />
           <Route path="/must-wins/create" element={<CreateMustWin />} />
-          <Route path="/must-wins/:id/progress" element={<UpdateMustWinProgress />} />
+          <Route path="/must-wins/:id/edit" element={<EditMustWin />} />
+          <Route path="/must-wins/progress" element={<UpdateMustWinProgress />} />
           
           {/* Key Activities Routes */}
           <Route path="/key-activities" element={<KeyActivities />} />
