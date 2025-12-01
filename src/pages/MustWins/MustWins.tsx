@@ -17,7 +17,6 @@ const STORAGE_KEY = 'must-wins-data'
 
 const MustWins = () => {
   const navigate = useNavigate()
-  const [selectedYear, setSelectedYear] = useState(2026)
   const [mustWins, setMustWins] = useState<MustWin[]>([
     {
       id: 1,
@@ -91,91 +90,81 @@ const MustWins = () => {
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-2 mb-2">
-            <h1 className="text-3xl font-bold text-gray-900">Must-Wins</h1>
-            <svg className="w-6 h-6 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2L8 8l-6 1 4.5 4L5.5 19 12 15.5 18.5 19l-1-6L22 9l-6-1z"/>
-            </svg>
-          </div>
-          <p className="text-gray-600">We will support, prioritize and track more capabilities. These are the must-wins to set us succeed in MW1 vision.</p>
-
-          {/* Year Selector */}
-          <div className="flex justify-end mt-4">
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors appearance-none bg-white bg-no-repeat bg-right"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
-                backgroundPosition: 'right 0.75rem center',
-                backgroundSize: '1.25rem'
-              }}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <h1 className="text-3xl font-bold text-gray-900">Must-Wins</h1>
+              <svg className="w-6 h-6 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2L8 8l-6 1 4.5 4L5.5 19 12 15.5 18.5 19l-1-6L22 9l-6-1z"/>
+              </svg>
+            </div>
+            <button
+              onClick={() => navigate('/must-wins/progress')}
+              className="px-6 py-2.5 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors font-medium whitespace-nowrap"
             >
-              <option value={2026}>2026</option>
-              <option value={2027}>2027</option>
-              <option value={2028}>2028</option>
-            </select>
+              Update Progress
+            </button>
           </div>
+          <p className="text-gray-600">We will support, prioritize and track more capabilities. These are the must-wins to set us succeed for our 2026 goals</p>
         </div>
 
         {/* Must-Wins List */}
         <div className="space-y-4">
-          {mustWins.map((win) => (
+          {mustWins.map((win, index) => (
             <div
               key={win.id}
-              className="bg-white rounded-lg border-2 border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow"
+              className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg hover:shadow-orange-200 transition-shadow"
             >
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-4 flex-1">
-                  {/* Win Number Badge */}
-                  <div className="bg-primary text-white font-bold text-lg px-4 py-2 rounded-lg flex-shrink-0">
-                    {win.number}
-                  </div>
-
-                  {/* Win Content */}
-                  <div className="flex-1">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-2">
-                      {win.title}
-                    </h2>
-                    <p className="text-sm text-gray-600 mb-4">
-                      {win.description}
-                    </p>
-
-                    {/* Meta Information */}
-                    <div className="flex items-center gap-6 text-sm text-gray-600">
-                      {/* Deadline */}
-                      <div className="flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <span>Deadline</span>
-                        <span className="font-medium text-gray-900">{formatDate(win.deadline)}</span>
-                      </div>
-
-                      {/* Assigned To */}
-                      <div className="flex items-center gap-2">
-                        <span>Assigned to</span>
-                        <span className="font-medium text-gray-900">{win.assignedTo}</span>
-                        <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs font-medium">
-                            {win.assignedTo.split(' ').map(n => n[0]).join('')}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+              <div className="flex items-center gap-6">
+                {/* Number Badge */}
+                <div className="flex-shrink-0">
+                  <div className="w-12 h-12 bg-primary text-white rounded-lg flex items-center justify-center font-bold text-lg">
+                    {String(index + 1).padStart(2, '0')}
                   </div>
                 </div>
 
-                {/* Edit Button */}
-                <button
-                  onClick={() => navigate(`/must-wins/${win.id}/edit`)}
-                  className="ml-4 flex-shrink-0 p-2 text-gray-600 hover:text-primary hover:bg-orange-50 rounded-lg transition-colors"
-                  title="Edit Must-Win"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                </button>
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">{win.title}</h3>
+                  <p className="text-sm text-gray-600 line-clamp-2">{win.description}</p>
+                </div>
+
+                {/* Stats Section */}
+                <div className="flex items-center gap-8">
+                  {/* Deadline */}
+                  <div className="text-center">
+                    <div className="text-xs text-gray-500 mb-1 flex items-center justify-center gap-1">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      Deadline
+                    </div>
+                    <div className="text-sm font-semibold text-gray-900">
+                      {formatDate(win.deadline)}
+                    </div>
+                  </div>
+
+                  {/* Assigned To */}
+                  <div className="text-center">
+                    <div className="text-xs text-gray-500 mb-1">Assigned to</div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center text-xs font-semibold">
+                        {win.assignedTo.split(' ').map(n => n[0]).join('')}
+                      </div>
+                      <span className="text-sm font-medium text-gray-900">{win.assignedTo}</span>
+                    </div>
+                  </div>
+
+                  {/* Edit Button */}
+                  <button
+                    onClick={() => navigate(`/must-wins/${win.id}/edit`)}
+                    className="p-2 text-gray-500 hover:text-primary hover:bg-orange-50 rounded-lg transition-colors"
+                    title="Edit Must-Win"
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           ))}

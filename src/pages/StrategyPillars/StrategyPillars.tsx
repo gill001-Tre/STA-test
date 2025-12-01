@@ -72,7 +72,6 @@ const initialPillars: Pillar[] = [
 
 const StrategyPillars = () => {
   const navigate = useNavigate()
-  const [selectedYear] = useState(new Date().getFullYear())
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [selectedPillarId, setSelectedPillarId] = useState<number | null>(null)
   const [selectedWins, setSelectedWins] = useState<number[]>([])
@@ -184,23 +183,6 @@ const StrategyPillars = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">Strategic Technology Pillars</h1>
-
-          {/* Year Selector */}
-          <div className="flex justify-end mb-4">
-            <select
-              value={selectedYear}
-              className="px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors appearance-none bg-white bg-no-repeat bg-right"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
-                backgroundPosition: 'right 0.75rem center',
-                backgroundSize: '1.25rem'
-              }}
-            >
-              <option value={2026}>2026</option>
-              <option value={2027}>2027</option>
-              <option value={2028}>2028</option>
-            </select>
-          </div>
         </div>
 
         {/* Pillars List */}
@@ -208,7 +190,7 @@ const StrategyPillars = () => {
           {pillars.map((pillar) => (
             <div
               key={pillar.id}
-              className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow"
+              className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm hover:shadow-lg hover:shadow-orange-200 transition-shadow"
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-4 flex-1">
