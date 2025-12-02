@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 // import { useMsal } from '@azure/msal-react'
 import { useState, useRef, useEffect } from 'react'
+import logo from '../../assets/logo.png'
 
 const Header = () => {
   const location = useLocation()
@@ -9,9 +10,11 @@ const Header = () => {
   const [isPillarsDropdownOpen, setIsPillarsDropdownOpen] = useState(false)
   const [isMustWinsDropdownOpen, setIsMustWinsDropdownOpen] = useState(false)
   const [isKeyActivitiesDropdownOpen, setIsKeyActivitiesDropdownOpen] = useState(false)
+  const [isSubTasksDropdownOpen, setIsSubTasksDropdownOpen] = useState(false)
   const pillarsDropdownRef = useRef<HTMLDivElement>(null)
   const mustWinsDropdownRef = useRef<HTMLDivElement>(null)
   const keyActivitiesDropdownRef = useRef<HTMLDivElement>(null)
+  const subTasksDropdownRef = useRef<HTMLDivElement>(null)
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -24,6 +27,10 @@ const Header = () => {
       }
       if (keyActivitiesDropdownRef.current && !keyActivitiesDropdownRef.current.contains(event.target as Node)) {
         setIsKeyActivitiesDropdownOpen(false)
+        setIsSubTasksDropdownOpen(false)
+      }
+      if (subTasksDropdownRef.current && !subTasksDropdownRef.current.contains(event.target as Node)) {
+        setIsSubTasksDropdownOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -49,9 +56,12 @@ const Header = () => {
     { name: 'Create Key Activity', path: '/key-activities/create' },
     { name: 'Show all Key Activities', path: '/key-activities' },
     { name: 'Update Activity Progress', path: '/key-activities/progress' },
+  ]
+
+  const subTasksSubMenu = [
     { name: 'Create Sub-task', path: '/sub-tasks/create' },
     { name: 'Show all Sub-tasks', path: '/sub-tasks' },
-    { name: 'Update Subtask Progress', path: '/sub-tasks/progress' },
+    { name: 'Update Sub-task Progress', path: '/sub-tasks/progress' },
   ]
 
   const handleLogout = () => {
@@ -66,11 +76,13 @@ const Header = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-              <span className="text-primary font-bold text-xl">3</span>
-            </div>
-            <span className="text-xl font-semibold">Tre Strategy Tracker</span>
+          <Link to="/" className="flex items-center space-x-2 group hover:opacity-80 transition-opacity">
+            <img 
+              src={logo} 
+              alt="Tre Strategy Tracker Logo" 
+              className="h-10 w-auto"
+            />
+            <span className="text-lg font-semibold hidden sm:inline">Tre Strategy Tracker</span>
           </Link>
 
           {/* Right side - Navigation, Year Selector, and Profile */}
@@ -111,6 +123,7 @@ const Header = () => {
                 {/* Dropdown Menu */}
                 {isKeyActivitiesDropdownOpen && (
                   <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 z-50">
+                    {/* Key Activities Options */}
                     {keyActivitiesSubMenu.map((item) => (
                       <Link
                         key={item.path}
@@ -121,6 +134,46 @@ const Header = () => {
                         {item.name}
                       </Link>
                     ))}
+                    
+                    {/* Divider */}
+                    <div className="my-1 border-t border-gray-200"></div>
+                    
+                    {/* Sub-tasks Submenu */}
+                    <div className="relative" ref={subTasksDropdownRef}>
+                      <button
+                        onClick={() => setIsSubTasksDropdownOpen(!isSubTasksDropdownOpen)}
+                        className="w-full text-left px-4 py-2 text-gray-800 hover:bg-orange-50 hover:text-primary transition-colors flex items-center justify-between"
+                      >
+                        <span className="font-medium">Sub-tasks</span>
+                        <svg 
+                          className={`w-4 h-4 transition-transform ${isSubTasksDropdownOpen ? 'rotate-180' : 'rotate-270'}`} 
+                          fill="none" 
+                          viewBox="0 0 24 24" 
+                          stroke="currentColor"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                      
+                      {/* Sub-tasks Submenu Items */}
+                      {isSubTasksDropdownOpen && (
+                        <div className="pl-4">
+                          {subTasksSubMenu.map((item) => (
+                            <Link
+                              key={item.path}
+                              to={item.path}
+                              onClick={() => {
+                                setIsSubTasksDropdownOpen(false)
+                                setIsKeyActivitiesDropdownOpen(false)
+                              }}
+                              className="block px-4 py-2 text-gray-700 hover:bg-gray-100 hover:text-primary transition-colors text-sm"
+                            >
+                              {item.name}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

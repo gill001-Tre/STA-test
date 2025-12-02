@@ -20,55 +20,7 @@ interface MustWin {
 
 const STORAGE_KEY = 'strategy-pillars-assignments'
 
-const initialPillars: Pillar[] = [
-  {
-    id: 1,
-    number: '01',
-    title: 'Cost Leadership via Technology Efficiency:',
-    description: 'Focus on reducing costs through technology efficiency and consolidation',
-    objectives: [
-      'Consolidate platforms and reduce duplication across Denmark and Sweden.',
-      'Leverage economies of scale to reduce cost per subscriber.',
-      'Implement proactive monitoring and automation to improve cost efficiency.',
-      'Mandate lean setup and cost-focused investments across the business.',
-      'Modernize legacy systems and adopt standard solutions to minimize waste.',
-      'Implement a unified house IT approach (e.g., one web service platform) to cut costs and complexity.'
-    ],
-    assignedWins: []
-  },
-  {
-    id: 2,
-    number: '02',
-    title: 'Business Differentiation through Digital Innovation:',
-    description: 'Deliver unique customer value through IT-enabled products and experiences',
-    objectives: [
-      'Deliver unique customer value through IT-enabled products and experiences.',
-      'Rapidly deploy new capabilities like:',
-      'AI-driven personalization',
-      'Seamless omnichannel experience',
-      'Exposure and local breakout',
-      'Enable hyper-personalized journeys (e.g., tailored offers, loyalty perks).',
-      'Support rollout of innovative services that set brands apart.'
-    ],
-    assignedWins: []
-  },
-  {
-    id: 3,
-    number: '03',
-    title: 'Operational Excellence & Agility:',
-    description: 'Deliver reliable, secure, and agile operations to boost execution quality',
-    objectives: [
-      'Deliver reliable, secure, and agile operations to boost execution quality.',
-      'Ensure high system uptime, strong security, and efficient feature delivery.',
-      'Support superior customer experience and internal productivity.',
-      'Drive continuous improvement with a "never settle" mindset.',
-      'Enhance value-adding activities (e.g., less manual work) for internal initiatives.',
-      'Enable IT to "do more with less" year over year.',
-      'Adapt quickly to market changes (e.g., fast rollout of new digital products or service integrations).'
-    ],
-    assignedWins: []
-  }
-]
+const initialPillars: Pillar[] = []
 
 const StrategyPillars = () => {
   const navigate = useNavigate()
@@ -96,23 +48,7 @@ const StrategyPillars = () => {
   }, [pillars])
 
   // Mock Must-Wins data - matching dashboard data
-  const mockMustWins: MustWin[] = [
-    { id: 1, number: 1, title: 'IT Stack Modernization', status: 'on-track', isAssigned: false },
-    { id: 2, number: 2, title: 'Cybersecurity & Compliance', status: 'in-progress', isAssigned: false },
-    { id: 3, number: 3, title: 'AI & Automation', status: 'on-track', isAssigned: false },
-    { id: 4, number: 4, title: '5G SA Launch', status: 'in-progress', isAssigned: false },
-  ]
-
-  const getWinTitle = (winId: number) => {
-    const win = mockMustWins.find(w => w.id === winId)
-    return win ? `Win ${win.number}` : ''
-  }
-
-  const handleAssignWin = (pillarId: number) => {
-    setSelectedPillarId(pillarId)
-    setSelectedWins([])
-    setShowAssignModal(true)
-  }
+  const mockMustWins: MustWin[] = []
 
   const handleToggleWin = (winId: number) => {
     setSelectedWins(prev =>
@@ -137,12 +73,10 @@ const StrategyPillars = () => {
     setSelectedWins([])
   }
 
-  const handleRemoveWin = (pillarId: number, winId: number) => {
-    setPillars(prev => prev.map(pillar =>
-      pillar.id === pillarId
-        ? { ...pillar, assignedWins: pillar.assignedWins.filter(id => id !== winId) }
-        : pillar
-    ))
+  const handleDeletePillar = (pillarId: number) => {
+    if (window.confirm('Are you sure you want to delete this pillar? This action cannot be undone.')) {
+      setPillars(prev => prev.filter(pillar => pillar.id !== pillarId))
+    }
   }
 
   const handleCancelAssignment = () => {
@@ -182,7 +116,18 @@ const StrategyPillars = () => {
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">Strategic Technology Pillars</h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold text-gray-900">Strategic Technology Pillars</h1>
+            <button
+              onClick={() => navigate('/strategy-pillars/create')}
+              className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Create Pillar
+            </button>
+          </div>
         </div>
 
         {/* Pillars List */}
@@ -216,16 +161,7 @@ const StrategyPillars = () => {
                             <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
                               <path d="M12 2L8 8l-6 1 4.5 4L5.5 19 12 15.5 18.5 19l-1-6L22 9l-6-1z"/>
                             </svg>
-                            {getWinTitle(winId)}
-                            <button
-                              onClick={() => handleRemoveWin(pillar.id, winId)}
-                              className="ml-1 hover:bg-yellow-200 rounded-full p-0.5 transition-colors"
-                              title="Remove win"
-                            >
-                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
+                            W{winId}
                           </span>
                         ))}
                       </div>
@@ -256,14 +192,16 @@ const StrategyPillars = () => {
                     Edit
                   </button>
                   
-                  {/* Assign Win Button */}
+                  {/* Delete Button */}
                   <button
-                    onClick={() => handleAssignWin(pillar.id)}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium">
+                    onClick={() => handleDeletePillar(pillar.id)}
+                    className="flex items-center gap-2 px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium"
+                    title="Delete Pillar"
+                  >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
-                    Assign Win
+                    Delete
                   </button>
                 </div>
               </div>

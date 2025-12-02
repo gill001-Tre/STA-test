@@ -5,6 +5,7 @@ const UpdateSubTask = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const subTaskId = searchParams.get('id')
+  const keyActivityFromUrl = searchParams.get('keyActivity') || 'Key Activity 1'
 
   const [formData, setFormData] = useState({
     keyActivity: '',
@@ -24,27 +25,68 @@ const UpdateSubTask = () => {
   // Load existing sub-task data
   useEffect(() => {
     if (subTaskId) {
-      // TODO: Fetch from Azure Table Storage
-      // Mock data for now based on subTaskId
-      setFormData({
-        keyActivity: 'Key Activity 1',
-        title: 'Database Migration',
-        description: 'Migrate legacy database to cloud infrastructure',
-        assignToHead: 'Fredrik Eder',
-        deadline: '2026-02-15',
-      })
+      const stored = localStorage.getItem('sub-tasks-data')
+      if (stored) {
+        try {
+          const subTasks = JSON.parse(stored)
+          const subTask = subTasks.find((task: any) => task.id === Number(subTaskId))
+          
+          if (subTask) {
+            setFormData({
+              keyActivity: subTask.keyActivity || 'Key Activity 1',
+              title: subTask.title || '',
+              description: subTask.description || '',
+              assignToHead: subTask.assignedTo || '',
+              deadline: subTask.deadline || '',
+            })
+          }
+        } catch (e) {
+          console.error('Failed to load sub-task:', e)
+        }
+      }
     }
   }, [subTaskId])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Updated sub-task data:', formData)
-    // TODO: Save to Azure Table Storage
-    navigate('/sub-tasks')
+    
+    if (!subTaskId) {
+      console.error('No sub-task ID provided')
+      return
+    }
+
+    // Load existing sub-tasks from localStorage
+    const stored = localStorage.getItem('sub-tasks-data')
+    if (stored) {
+      try {
+        const subTasks = JSON.parse(stored)
+        const taskIndex = subTasks.findIndex((task: any) => task.id === Number(subTaskId))
+        
+        if (taskIndex !== -1) {
+          // Update the sub-task
+          subTasks[taskIndex] = {
+            ...subTasks[taskIndex],
+            keyActivity: formData.keyActivity,
+            title: formData.title,
+            description: formData.description,
+            assignedTo: formData.assignToHead,
+            deadline: formData.deadline,
+          }
+          
+          // Save back to localStorage
+          localStorage.setItem('sub-tasks-data', JSON.stringify(subTasks))
+          console.log('Updated sub-task:', subTasks[taskIndex])
+        }
+      } catch (e) {
+        console.error('Failed to update sub-task:', e)
+      }
+    }
+    
+    navigate(`/sub-tasks?keyActivity=${encodeURIComponent(keyActivityFromUrl)}`)
   }
 
   const handleCancel = () => {
-    navigate('/dashboard')
+    navigate(`/sub-tasks?keyActivity=${encodeURIComponent(keyActivityFromUrl)}`)
   }
 
   return (

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 interface KPI {
   name: string
@@ -8,10 +8,13 @@ interface KPI {
 
 const CreateKeyActivity = () => {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const winId = searchParams.get('winId') || '1'
+  
   const [formData, setFormData] = useState({
     year: new Date().getFullYear(),
     title: '',
-    assignedMustWin: '',
+    assignedMustWin: winId,
     assignToHead: '',
     description: '',
     deadline: '',
@@ -20,6 +23,11 @@ const CreateKeyActivity = () => {
   const [baselineKPIs, setBaselineKPIs] = useState<KPI[]>([{ name: '', range: '' }, { name: '', range: '' }])
   const [targetKPIs, setTargetKPIs] = useState<KPI[]>([{ name: '', range: '' }, { name: '', range: '' }])
   const [stretchKPIs, setStretchKPIs] = useState<KPI[]>([{ name: '', range: '' }, { name: '', range: '' }])
+
+  // Update assignedMustWin when winId changes
+  useEffect(() => {
+    setFormData(prev => ({ ...prev, assignedMustWin: winId }))
+  }, [winId])
 
   const addKPI = (type: 'baseline' | 'target' | 'stretch') => {
     if (type === 'baseline') {
@@ -68,15 +76,40 @@ const CreateKeyActivity = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Load existing activities from localStorage
+    const stored = localStorage.getItem('key-activities-data')
+    let existingActivities = []
+    if (stored) {
+      try {
+        existingActivities = JSON.parse(stored)
+      } catch (e) {
+        console.error('Failed to parse stored activities:', e)
+      }
+    }
+    
+    // Generate new activity ID
+    const newId = existingActivities.length > 0 
+      ? Math.max(...existingActivities.map((a: any) => a.id)) + 1 
+      : 1
+    
     const activityData = {
+      id: newId,
       ...formData,
+      progress: 0,
+      status: 'needs-attention',
       baselineKPIs: baselineKPIs.filter(kpi => kpi.name || kpi.range),
       targetKPIs: targetKPIs.filter(kpi => kpi.name || kpi.range),
       stretchKPIs: stretchKPIs.filter(kpi => kpi.name || kpi.range),
     }
-    console.log('Creating key activity:', activityData)
+    
+    // Add new activity to array and save
+    const updatedActivities = [...existingActivities, activityData]
+    localStorage.setItem('key-activities-data', JSON.stringify(updatedActivities))
+    
+    console.log('Created key activity:', activityData)
     // TODO: Save to Azure Table Storage
-    navigate('/key-activities')
+    navigate(`/key-activities?winId=${winId}`)
   }
 
   const handleCancel = () => {
@@ -236,7 +269,6 @@ const CreateKeyActivity = () => {
                             type="text"
                             value={kpi.range}
                             onChange={(e) => updateKPI('baseline', index, 'range', e.target.value)}
-                            placeholder="e.g., 75-100%"
                             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
                           />
                         </div>
@@ -292,7 +324,6 @@ const CreateKeyActivity = () => {
                             type="text"
                             value={kpi.range}
                             onChange={(e) => updateKPI('target', index, 'range', e.target.value)}
-                            placeholder="e.g., 75-100%"
                             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
                           />
                         </div>
@@ -348,7 +379,6 @@ const CreateKeyActivity = () => {
                             type="text"
                             value={kpi.range}
                             onChange={(e) => updateKPI('stretch', index, 'range', e.target.value)}
-                            placeholder="e.g., 75-100%"
                             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
                           />
                         </div>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LocalStorage Inspector</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+            margin: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #FF6600;
+            padding-bottom: 10px;
+        }
+        .storage-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .storage-section h2 {
+            color: #FF6600;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status.found {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.notfound {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 0.85em;
+            max-height: 400px;
+            overflow-y: auto;
+            border-left: 4px solid #FF6600;
+        }
+        .count {
+            font-size: 1.2em;
+            color: #FF6600;
+            font-weight: bold;
+        }
+        .summary {
+            background: #fff3e0;
+            border-left: 4px solid #FF6600;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #FF6600;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.95em;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #E55A00;
+        }
+        .button-group {
+            margin-bottom: 20px;
+        }
+        .error {
+            color: #721c24;
+            background: #f8d7da;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 4px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 LocalStorage Data Inspector</h1>
+        
+        <div class="button-group">
+            <button onclick="window.location.reload()">🔄 Refresh</button>
+            <button onclick="clearAllData()">🗑️ Clear All Data</button>
+        </div>
+
+        <div class="summary" id="summary"></div>
+        <div id="storage"></div>
+    </div>
+
+    <script>
+        const KEYS = [
+            { name: 'must-wins-data', label: 'Must-Wins' },
+            { name: 'key-activities-data', label: 'Key Activities' },
+            { name: 'sub-tasks-data', label: 'Sub-Tasks' },
+            { name: 'strategy-pillars-assignments', label: 'Strategy Pillars' }
+        ];
+
+        function formatJson(obj) {
+            return JSON.stringify(obj, null, 2);
+        }
+
+        function displayStorage() {
+            const storageDiv = document.getElementById('storage');
+            const summaryDiv = document.getElementById('summary');
+            let html = '';
+            let totalItems = 0;
+
+            KEYS.forEach(({ name, label }) => {
+                const data = localStorage.getItem(name);
+                const hasData = data !== null;
+                
+                if (hasData) {
+                    try {
+                        const parsed = JSON.parse(data);
+                        const count = Array.isArray(parsed) ? parsed.length : 1;
+                        totalItems += count;
+                        
+                        html += `
+                            <div class="storage-section">
+                                <h2>
+                                    ${label}
+                                    <span class="status found">✓ Found</span>
+                                </h2>
+                                <p><strong>Key:</strong> ${name}</p>
+                                <p><strong>Items:</strong> <span class="count">${count}</span></p>
+                                <p><strong>Data:</strong></p>
+                                <pre>${formatJson(parsed)}</pre>
+                            </div>
+                        `;
+                    } catch (e) {
+                        html += `
+                            <div class="storage-section">
+                                <h2>
+                                    ${label}
+                                    <span class="status notfound">⚠️ Parse Error</span>
+                                </h2>
+                                <p><strong>Key:</strong> ${name}</p>
+                                <div class="error">Error parsing JSON: ${e.message}</div>
+                                <p><strong>Raw Data:</strong></p>
+                                <pre>${data}</pre>
+                            </div>
+                        `;
+                    }
+                } else {
+                    html += `
+                        <div class="storage-section">
+                            <h2>
+                                ${label}
+                                <span class="status notfound">✗ Not Found</span>
+                            </h2>
+                            <p><strong>Key:</strong> ${name}</p>
+                            <p><em>No data stored yet. Create some items in the app to populate this section.</em></p>
+                        </div>
+                    `;
+                }
+            });
+
+            let summaryHtml = `
+                <h3>📊 Summary</h3>
+                <p><strong>Total Items Stored:</strong> <span class="count">${totalItems}</span></p>
+                <p><strong>Storage Keys with Data:</strong> ${KEYS.filter(k => localStorage.getItem(k.name)).length} / ${KEYS.length}</p>
+            `;
+
+            summaryDiv.innerHTML = summaryHtml;
+            storageDiv.innerHTML = html;
+        }
+
+        function clearAllData() {
+            if (confirm('Are you sure you want to clear ALL localStorage data? This cannot be undone.')) {
+                KEYS.forEach(({ name }) => {
+                    localStorage.removeItem(name);
+                });
+                alert('All localStorage data has been cleared.');
+                displayStorage();
+            }
+        }
+
+        // Display on load
+        displayStorage();
+
+        // Auto-refresh every 5 seconds to show live updates
+        setInterval(displayStorage, 5000);
+    </script>
+</body>
+</html>

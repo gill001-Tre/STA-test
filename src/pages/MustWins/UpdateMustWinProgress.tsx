@@ -1,64 +1,51 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 interface MustWin {
   id: number
   number: string
   title: string
+  description?: string
   progress: number
   status: 'on-track' | 'in-progress' | 'needs-attention'
   deadline: string
-  assignedTo: string
+  owners: string[]
+  assignedPillars?: string[]
 }
 
 const STORAGE_KEY = 'must-wins-data'
 
-const initialMustWins: MustWin[] = [
-  {
-    id: 1,
-    number: '01',
-    title: 'Abcd',
-    progress: 77,
-    status: 'on-track',
-    deadline: '2026-02-01',
-    assignedTo: 'Fredrik Eder'
-  },
-  {
-    id: 2,
-    number: '02',
-    title: 'Abcde',
-    progress: 57,
-    status: 'in-progress',
-    deadline: '2026-03-01',
-    assignedTo: 'Fredrik Eder'
-  },
-  {
-    id: 3,
-    number: '03',
-    title: 'hghjggad',
-    progress: 95,
-    status: 'on-track',
-    deadline: '2026-02-02',
-    assignedTo: 'Caroline Lundberg'
-  },
-  {
-    id: 4,
-    number: '04',
-    title: 'bjvjkbakla',
-    progress: 10,
-    status: 'needs-attention',
-    deadline: '2026-02-01',
-    assignedTo: 'Jennet Björn'
-  }
-]
+const initialMustWins: MustWin[] = []
 
 const UpdateMustWinProgress = () => {
   const navigate = useNavigate()
+  const [originalData, setOriginalData] = useState<any[]>([])
   
   // Load from localStorage or use initial data
   const [mustWins, setMustWins] = useState<MustWin[]>(() => {
     const stored = localStorage.getItem(STORAGE_KEY)
-    return stored ? JSON.parse(stored) : initialMustWins
+    if (stored) {
+      try {
+        const parsedData = JSON.parse(stored)
+        setOriginalData(parsedData) // Keep original data for saving
+        // Map data to ensure correct structure with owners array
+        return parsedData.map((win: any) => ({
+          id: win.id,
+          number: `W${win.id}`,
+          title: win.title,
+          description: win.description,
+          progress: win.progress || 0,
+          status: win.status || 'needs-attention',
+          deadline: win.deadline || '',
+          owners: win.owners || (win.owner ? [win.owner] : []),
+          assignedPillars: win.assignedPillars || []
+        }))
+      } catch (e) {
+        console.error('Failed to parse stored must-wins:', e)
+        return initialMustWins
+      }
+    }
+    return initialMustWins
   })
 
   const handleProgressChange = (id: number, newProgress: number) => {
@@ -91,20 +78,24 @@ const UpdateMustWinProgress = () => {
   }
 
   const handleSaveChanges = () => {
+    // Merge progress updates back into original data to preserve all fields
+    const updatedData = originalData.map(original => {
+      const updated = mustWins.find(w => w.id === original.id)
+      if (updated) {
+        return {
+          ...original,
+          progress: updated.progress,
+          status: updated.status
+        }
+      }
+      return original
+    })
+    
     // Save to localStorage
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(mustWins))
-    console.log('Progress changes saved to localStorage:', mustWins)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedData))
+    console.log('Progress changes saved to localStorage:', updatedData)
     // TODO: Later integrate with Azure Table Storage
-    navigate('/must-wins')
-  }
-
-  const handleBack = () => {
-    navigate(-1)
-  }
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })
+    navigate('/dashboard')
   }
 
   return (
@@ -112,7 +103,7 @@ const UpdateMustWinProgress = () => {
       <div className="container mx-auto px-4 max-w-4xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">Update Must-wins progress</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-6">Update Must-Wins Progress</h1>
 
           {/* Progress Legend */}
           <div className="flex items-center gap-6 text-sm">
@@ -181,27 +172,6 @@ const UpdateMustWinProgress = () => {
                       style={{ zIndex: 10 }}
                     />
                   </div>
-
-                  {/* Deadline and Assigned To - Below Progress Bar */}
-                  <div className="flex items-center justify-end gap-8 text-sm text-gray-600 pt-2 border-t border-gray-200">
-                    <div className="flex items-center gap-2">
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <span className="text-gray-600">Deadline</span>
-                      <span className="font-medium text-gray-900">{formatDate(win.deadline)}</span>
-                    </div>
-                    <div className="w-px h-8 bg-gray-300"></div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-600">Assigned to:</span>
-                      <span className="font-medium text-gray-900">{win.assignedTo}</span>
-                      <div className="w-7 h-7 bg-gray-400 rounded-full flex items-center justify-center">
-                        <span className="text-white text-xs font-medium">
-                          {win.assignedTo.split(' ').map(n => n[0]).join('')}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -218,39 +188,6 @@ const UpdateMustWinProgress = () => {
           </button>
         </div>
       </div>
-
-      <style>{`
-        .slider::-webkit-slider-thumb {
-          appearance: none;
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          background: #FF6600;
-          cursor: pointer;
-          border: 3px solid white;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        }
-        
-        .slider::-moz-range-thumb {
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          background: #FF6600;
-          cursor: pointer;
-          border: 3px solid white;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        }
-
-        .slider::-webkit-slider-runnable-track {
-          background: transparent;
-          height: 2px;
-        }
-
-        .slider::-moz-range-track {
-          background: transparent;
-          height: 2px;
-        }
-      `}</style>
     </div>
   )
 }

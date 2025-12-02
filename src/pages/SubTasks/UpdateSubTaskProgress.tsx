@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 interface SubTask {
   id: number
@@ -15,61 +15,22 @@ interface SubTask {
 
 const STORAGE_KEY = 'sub-tasks-data'
 
-const initialSubTasks: SubTask[] = [
-  {
-    id: 1,
-    number: '01',
-    title: 'Database Migration',
-    progress: 65,
-    status: 'on-track',
-    deadline: '2026-02-15',
-    assignedTo: 'Fredrik Eder',
-    assignedToAvatar: 'FE',
-    keyActivity: 'IT Stack Modernization'
-  },
-  {
-    id: 2,
-    number: '02',
-    title: 'API Integration',
-    progress: 45,
-    status: 'in-progress',
-    deadline: '2026-03-10',
-    assignedTo: 'Caroline Lundberg',
-    assignedToAvatar: 'CL',
-    keyActivity: 'CRM Transformation'
-  },
-  {
-    id: 3,
-    number: '03',
-    title: 'User Testing Phase',
-    progress: 80,
-    status: 'on-track',
-    deadline: '2026-04-05',
-    assignedTo: 'Jennet Björn',
-    assignedToAvatar: 'JB',
-    keyActivity: 'Self Service Merger'
-  },
-  {
-    id: 4,
-    number: '04',
-    title: 'Cost Analysis Report',
-    progress: 20,
-    status: 'needs-attention',
-    deadline: '2026-02-20',
-    assignedTo: 'Fredrik Eder',
-    assignedToAvatar: 'FE',
-    keyActivity: 'Cost Efficiency Drive'
-  }
-]
+const initialSubTasks: SubTask[] = []
 
 const UpdateSubTaskProgress = () => {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const keyActivityFromUrl = searchParams.get('keyActivity') || 'Key Activity 1'
+  const [selectedKeyActivity, setSelectedKeyActivity] = useState(keyActivityFromUrl)
   
   // Load from localStorage or use initial data
   const [subTasks, setSubTasks] = useState<SubTask[]>(() => {
     const stored = localStorage.getItem(STORAGE_KEY)
     return stored ? JSON.parse(stored) : initialSubTasks
   })
+
+  // Filter tasks by selected key activity
+  const filteredSubTasks = subTasks.filter(task => task.keyActivity === selectedKeyActivity)
 
   const handleProgressChange = (id: number, newProgress: number) => {
     setSubTasks(prev => prev.map(task => {
@@ -105,7 +66,7 @@ const UpdateSubTaskProgress = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(subTasks))
     console.log('Progress changes saved to localStorage:', subTasks)
     // TODO: Later integrate with Azure Table Storage
-    navigate('/sub-tasks')
+    navigate(`/sub-tasks?keyActivity=${encodeURIComponent(selectedKeyActivity)}`)
   }
 
   const formatDate = (dateString: string) => {
@@ -116,9 +77,37 @@ const UpdateSubTaskProgress = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4 max-w-4xl">
+        {/* Back Link */}
+        <button
+          onClick={() => navigate(`/sub-tasks?keyActivity=${encodeURIComponent(selectedKeyActivity)}`)}
+          className="flex items-center gap-1 text-primary hover:text-orange-600 transition-colors mb-4 font-medium"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back
+        </button>
+
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">Update Sub-tasks Progress</h1>
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-3xl font-bold text-gray-900">Update Sub-tasks Progress</h1>
+            <select
+              value={selectedKeyActivity}
+              onChange={(e) => setSelectedKeyActivity(e.target.value)}
+              className="px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+            >
+              <option value="Key Activity 1">Key Activity 1</option>
+              <option value="Key Activity 2">Key Activity 2</option>
+              <option value="Key Activity 3">Key Activity 3</option>
+              <option value="Key Activity 4">Key Activity 4</option>
+            </select>
+          </div>
+
+          {/* Updating message */}
+          <p className="text-gray-600 mb-4">
+            <span className="font-medium">Updating for:</span> {selectedKeyActivity}
+          </p>
 
           {/* Progress Legend */}
           <div className="flex items-center gap-6 text-sm">
@@ -140,7 +129,7 @@ const UpdateSubTaskProgress = () => {
 
         {/* Sub-tasks Progress List */}
         <div className="space-y-4">
-          {subTasks.map((task) => (
+          {filteredSubTasks.map((task) => (
             <div
               key={task.id}
               className="bg-white rounded-xl p-6 shadow-sm border border-gray-200"

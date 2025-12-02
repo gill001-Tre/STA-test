@@ -1,57 +1,16 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
-const STORAGE_KEY = 'strategy-pillars-assignments'
+interface Pillar {
+  id: number
+  number: string
+  title: string
+  description: string
+  objectives: string[]
+  assignedWins: number[]
+}
 
-const initialPillars = [
-  {
-    id: 1,
-    number: '01',
-    title: 'Cost Leadership via Technology Efficiency:',
-    description: 'Focus on reducing costs through technology efficiency and consolidation',
-    objectives: [
-      'Consolidate platforms and reduce duplication across Denmark and Sweden.',
-      'Leverage economies of scale to reduce cost per subscriber.',
-      'Implement proactive monitoring and automation to improve cost efficiency.',
-      'Mandate lean setup and cost-focused investments across the business.',
-      'Modernize legacy systems and adopt standard solutions to minimize waste.',
-      'Implement a unified house IT approach (e.g., one web service platform) to cut costs and complexity.'
-    ],
-    assignedWins: []
-  },
-  {
-    id: 2,
-    number: '02',
-    title: 'Business Differentiation through Digital Innovation:',
-    description: 'Deliver unique customer value through IT-enabled products and experiences',
-    objectives: [
-      'Deliver unique customer value through IT-enabled products and experiences.',
-      'Rapidly deploy new capabilities like:',
-      'AI-driven personalization',
-      'Seamless omnichannel experience',
-      'Exposure and local breakout',
-      'Enable hyper-personalized journeys (e.g., tailored offers, loyalty perks).',
-      'Support rollout of innovative services that set brands apart.'
-    ],
-    assignedWins: []
-  },
-  {
-    id: 3,
-    number: '03',
-    title: 'Operational Excellence & Agility:',
-    description: 'Deliver reliable, secure, and agile operations to boost execution quality',
-    objectives: [
-      'Deliver reliable, secure, and agile operations to boost execution quality.',
-      'Ensure high system uptime, strong security, and efficient feature delivery.',
-      'Support superior customer experience and internal productivity.',
-      'Drive continuous improvement with a "never settle" mindset.',
-      'Enhance value-adding activities (e.g., less manual work) for internal initiatives.',
-      'Enable IT to "do more with less" year over year.',
-      'Adapt quickly to market changes (e.g., fast rollout of new digital products or service integrations).'
-    ],
-    assignedWins: []
-  }
-]
+const STORAGE_KEY = 'strategy-pillars-assignments'
 
 const EditStrategyPillar = () => {
   const navigate = useNavigate()
@@ -64,31 +23,26 @@ const EditStrategyPillar = () => {
   })
 
   useEffect(() => {
-    console.log('Loading pillar with id:', id)
-    // Load existing pillar data
+    // Load existing pillar data from localStorage
     const stored = localStorage.getItem(STORAGE_KEY)
-    let pillars = initialPillars
     
     if (stored) {
       try {
-        pillars = JSON.parse(stored)
-        console.log('Loaded pillars from storage:', pillars)
+        const pillars: Pillar[] = JSON.parse(stored)
+        const pillar = pillars.find(p => p.id === Number(id))
+        
+        if (pillar) {
+          // Convert objectives array to newline-separated text
+          const objectivesText = pillar.objectives.join('\n')
+          setFormData({
+            year: 2026,
+            title: pillar.title,
+            description: objectivesText
+          })
+        }
       } catch (e) {
         console.error('Failed to parse stored pillars:', e)
       }
-    }
-
-    const pillar = pillars.find(p => p.id === Number(id))
-    console.log('Found pillar:', pillar)
-    if (pillar) {
-      // Combine description and objectives with bullet points
-      const objectivesText = pillar.objectives.map(obj => `• ${obj}`).join('\n')
-      const fullDescription = pillar.description + '\n\n' + objectivesText
-      setFormData({
-        year: 2026,
-        title: pillar.title,
-        description: fullDescription
-      })
     }
     setLoading(false)
   }, [id])
@@ -96,31 +50,42 @@ const EditStrategyPillar = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Update pillar in localStorage
+    // Load pillars from localStorage
     const stored = localStorage.getItem(STORAGE_KEY)
-    let pillars = initialPillars
     
     if (stored) {
       try {
-        pillars = JSON.parse(stored)
+        const pillars: Pillar[] = JSON.parse(stored)
+        
+        // Split description into objectives (one per line)
+        const objectives = formData.description
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line.length > 0)
+        
+        // Update the pillar
+        const updatedPillars = pillars.map(pillar =>
+          pillar.id === Number(id)
+            ? { 
+                ...pillar, 
+                title: formData.title, 
+                description: formData.description,
+                objectives: objectives
+              }
+            : pillar
+        )
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPillars))
+        console.log('Updated Strategy Pillar:', id)
+        navigate('/strategy-pillars')
       } catch (e) {
-        console.error('Failed to parse stored pillars:', e)
+        console.error('Failed to update pillar:', e)
       }
     }
-
-    const updatedPillars = pillars.map(pillar =>
-      pillar.id === Number(id)
-        ? { ...pillar, title: formData.title, description: formData.description }
-        : pillar
-    )
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPillars))
-    console.log('Updating Strategy Pillar:', id, formData)
-    navigate('/strategy-pillars')
   }
 
   const handleCancel = () => {
-    navigate('/dashboard')
+    navigate('/strategy-pillars')
   }
 
   return (

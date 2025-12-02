@@ -13,12 +13,13 @@ import UpdateMustWinProgress from './pages/MustWins/UpdateMustWinProgress'
 import KeyActivities from './pages/KeyActivities/KeyActivities'
 import CreateKeyActivity from './pages/KeyActivities/CreateKeyActivity'
 import UpdateKeyActivity from './pages/KeyActivities/UpdateKeyActivity'
+import UpdateKeyActivitiesProgress from './pages/KeyActivities/UpdateKeyActivitiesProgress'
 import KeyActivityDetail from './pages/KeyActivities/KeyActivityDetail'
-import UpdateKeyActivityProgress from './pages/KeyActivities/UpdateKeyActivityProgress'
 import SubTasks from './pages/SubTasks/SubTasks'
 import CreateSubTask from './pages/SubTasks/CreateSubTask'
 import UpdateSubTask from './pages/SubTasks/UpdateSubTask'
 import UpdateSubTaskProgress from './pages/SubTasks/UpdateSubTaskProgress'
+import DataCheck from './pages/Debug/DataCheck'
 
 function App() {
   // Temporarily disable authentication for development
@@ -45,13 +46,16 @@ function App() {
           <Route path="/key-activities/create" element={<CreateKeyActivity />} />
           <Route path="/key-activities/update" element={<UpdateKeyActivity />} />
           <Route path="/key-activities/:id" element={<KeyActivityDetail />} />
-          <Route path="/key-activities/progress" element={<UpdateKeyActivityProgress />} />
+          <Route path="/key-activities/progress" element={<UpdateKeyActivitiesProgress />} />
           
           {/* Sub-tasks Routes */}
           <Route path="/sub-tasks" element={<SubTasks />} />
           <Route path="/sub-tasks/create" element={<CreateSubTask />} />
           <Route path="/sub-tasks/update" element={<UpdateSubTask />} />
           <Route path="/sub-tasks/progress" element={<UpdateSubTaskProgress />} />
+          
+          {/* Debug Route */}
+          <Route path="/debug/data-check" element={<DataCheck />} />
           
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

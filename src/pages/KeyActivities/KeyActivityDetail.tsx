@@ -28,56 +28,7 @@ const KeyActivityDetail = () => {
   ]
 
   // All sub-tasks - TODO: Replace with actual data from Azure Table Storage
-  const allSubTasks: SubTask[] = [
-    {
-      id: 1,
-      number: '01',
-      title: 'Database Migration',
-      description: 'Migrate legacy database to cloud infrastructure',
-      deadline: '2026-02-15',
-      assignedTo: 'Fredrik Eder',
-      assignedToAvatar: 'FE',
-      keyActivity: 'CRM Transformation',
-      progress: 65,
-      completed: true
-    },
-    {
-      id: 2,
-      number: '02',
-      title: 'API Integration',
-      description: 'Integrate third-party APIs for CRM system',
-      deadline: '2026-03-10',
-      assignedTo: 'Caroline Lundberg',
-      assignedToAvatar: 'CL',
-      keyActivity: 'CRM Transformation',
-      progress: 45,
-      completed: false
-    },
-    {
-      id: 3,
-      number: '03',
-      title: 'User Testing Phase',
-      description: 'Conduct user acceptance testing for new features',
-      deadline: '2026-04-05',
-      assignedTo: 'Jennet Björn',
-      assignedToAvatar: 'JB',
-      keyActivity: 'Self Service Merger',
-      progress: 80,
-      completed: true
-    },
-    {
-      id: 4,
-      number: '04',
-      title: 'Cost Analysis Report',
-      description: 'Analyze and report current infrastructure costs',
-      deadline: '2026-02-20',
-      assignedTo: 'Fredrik Eder',
-      assignedToAvatar: 'FE',
-      keyActivity: 'Cost Efficiency',
-      progress: 20,
-      completed: false
-    }
-  ]
+  const allSubTasks: SubTask[] = []
 
   const activity = {
     id: Number(id),

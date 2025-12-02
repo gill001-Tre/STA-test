@@ -1,6 +1,17 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+interface Pillar {
+  id: number
+  number: string
+  title: string
+  description: string
+  objectives: string[]
+  assignedWins: number[]
+}
+
+const STORAGE_KEY = 'strategy-pillars-assignments'
+
 const CreateStrategyPillar = () => {
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
@@ -11,14 +22,51 @@ const CreateStrategyPillar = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: Save to Azure Table Storage
-    console.log('Creating pillar:', formData)
+    
+    // Load existing pillars from localStorage
+    const stored = localStorage.getItem(STORAGE_KEY)
+    let existingPillars: Pillar[] = []
+    if (stored) {
+      try {
+        existingPillars = JSON.parse(stored)
+      } catch (e) {
+        console.error('Failed to parse stored pillars:', e)
+      }
+    }
+
+    // Generate new pillar ID and number
+    const newId = existingPillars.length > 0 
+      ? Math.max(...existingPillars.map(p => p.id)) + 1 
+      : 1
+    const newNumber = `P${newId}`
+
+    // Create new pillar with objectives from description (split by newlines)
+    const objectives = formData.description
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
+
+    const newPillar: Pillar = {
+      id: newId,
+      number: newNumber,
+      title: formData.title,
+      description: formData.description,
+      objectives: objectives,
+      assignedWins: []
+    }
+
+    // Add new pillar to array and save
+    const updatedPillars = [...existingPillars, newPillar]
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPillars))
+    
+    console.log('Created pillar:', newPillar)
+    
     // Navigate back to strategy pillars list
     navigate('/strategy-pillars')
   }
 
   const handleCancel = () => {
-    navigate('/dashboard')
+    navigate('/strategy-pillars')
   }
 
   const years = [2026, 2027, 2028]
@@ -84,20 +132,30 @@ const CreateStrategyPillar = () => {
             {/* Description Field */}
             <div className="mb-8">
               <label htmlFor="description" className="block text-sm font-medium text-gray-900 mb-2">
-                Description
+                Description (Objectives)
               </label>
-              <textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Describe the pillar"
-                rows={6}
-                maxLength={1000}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors placeholder:text-gray-400 resize-none"
-                required
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                {formData.description.length}/1000 characters
+              <div className="relative">
+                <textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Enter objectives (one per line)"
+                  rows={6}
+                  maxLength={1000}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors placeholder:text-gray-400 resize-none"
+                  required
+                />
+                <div className="absolute top-2 right-2 text-gray-400 pointer-events-none">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+                {formData.description.length}/1000 characters • Each line will appear as a bullet point
               </p>
             </div>
 
