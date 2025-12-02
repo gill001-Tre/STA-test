@@ -44,13 +44,7 @@ const SubTasks = () => {
     }
   }, [searchParams])
 
-  // Key activity mapping
-  const keyActivityMap: { [key: string]: string } = {
-    'Key Activity 1': 'CRM Transformation',
-    'Key Activity 2': 'Self Service Merger',
-    'Key Activity 3': 'Cost Efficiency',
-    'Key Activity 4': 'Cloud Right Strategy'
-  }
+  // (Removed unused keyActivityMap to satisfy TS noUnusedLocals)
 
   // Filter sub-tasks based on selected key activity
   const subTasks = selectedFilter === 'All' 
