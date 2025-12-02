@@ -10,6 +10,7 @@ const UpdateKeyActivity = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const activityId = searchParams.get('id')
+  const winId = searchParams.get('winId') || '1' // Default to Win 1 if not provided
 
   const [formData, setFormData] = useState({
     year: 2026,
@@ -26,43 +27,63 @@ const UpdateKeyActivity = () => {
 
   const years = [2026, 2027, 2028]
 
-  const mustWins = [
-    { id: 1, title: 'IT Stack Modernization' },
-    { id: 2, title: 'Cybersecurity & Compliance' },
-    { id: 3, title: 'AI & Automation' },
-    { id: 4, title: '5G SA Readiness' },
-  ]
+  // Load must-wins from localStorage
+  const [allMustWins, setAllMustWins] = useState<any[]>([])
 
-  // Load existing activity data
+  useEffect(() => {
+    // Load must-wins
+    const storedWins = localStorage.getItem('must-wins-data')
+    if (storedWins) {
+      try {
+        setAllMustWins(JSON.parse(storedWins))
+      } catch (e) {
+        console.error('Failed to parse must-wins:', e)
+      }
+    }
+  }, [])
+
+  // Load existing activity data from localStorage
   useEffect(() => {
     if (activityId) {
-      // TODO: Fetch from Azure Table Storage
-      // Mock data for now
-      setFormData({
-        year: 2026,
-        title: 'CRM Transformation',
-        assignedMustWin: '1',
-        assignToHead: 'Fredrik Eder',
-        description: 'Reach tailgates of Apollo program',
-        deadline: '2026-02-04',
-      })
-      
-      setBaselineKPIs([
-        { name: '3IT In Development Progress', range: '75-100%' },
-        { name: 'E2E Testing Progress', range: '66-100%' }
-      ])
-      
-      setTargetKPIs([
-        { name: '3IT In Development Progress', range: '75-100%' },
-        { name: '', range: '' }
-      ])
-      
-      setStretchKPIs([
-        { name: '3IT In Development Progress', range: '75-100%' },
-        { name: '', range: '' }
-      ])
+      const stored = localStorage.getItem('key-activities-data')
+      if (stored) {
+        try {
+          const activities = JSON.parse(stored)
+          const activity = activities.find((a: any) => a.id === Number(activityId))
+          
+          if (activity) {
+            setFormData({
+              year: 2026,
+              title: activity.title || '',
+              assignedMustWin: activity.assignedMustWin || '',
+              assignToHead: activity.assignToHead || '',
+              description: activity.description || '',
+              deadline: activity.deadline || '',
+            })
+            
+            setBaselineKPIs(activity.baselineKPIs && activity.baselineKPIs.length > 0 
+              ? activity.baselineKPIs 
+              : [{ name: '', range: '' }, { name: '', range: '' }])
+            
+            setTargetKPIs(activity.targetKPIs && activity.targetKPIs.length > 0 
+              ? activity.targetKPIs 
+              : [{ name: '', range: '' }, { name: '', range: '' }])
+            
+            setStretchKPIs(activity.stretchKPIs && activity.stretchKPIs.length > 0 
+              ? activity.stretchKPIs 
+              : [{ name: '', range: '' }, { name: '', range: '' }])
+          }
+        } catch (e) {
+          console.error('Failed to parse stored activities:', e)
+        }
+      }
     }
   }, [activityId])
+
+  const mustWins = allMustWins.map((win: any) => ({
+    id: win.id,
+    title: win.title
+  }))
 
   const addKPI = (type: 'baseline' | 'target' | 'stretch') => {
     if (type === 'baseline') {
@@ -102,19 +123,41 @@ const UpdateKeyActivity = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    const activityData = {
-      ...formData,
-      baselineKPIs: baselineKPIs.filter(kpi => kpi.name || kpi.range),
-      targetKPIs: targetKPIs.filter(kpi => kpi.name || kpi.range),
-      stretchKPIs: stretchKPIs.filter(kpi => kpi.name || kpi.range),
+    
+    // Load existing activities from localStorage
+    const stored = localStorage.getItem('key-activities-data')
+    if (stored && activityId) {
+      try {
+        const activities = JSON.parse(stored)
+        const activityIndex = activities.findIndex((a: any) => a.id === Number(activityId))
+        
+        if (activityIndex !== -1) {
+          // Update the activity
+          activities[activityIndex] = {
+            ...activities[activityIndex],
+            title: formData.title,
+            description: formData.description,
+            assignedMustWin: formData.assignedMustWin,
+            assignToHead: formData.assignToHead,
+            deadline: formData.deadline,
+            baselineKPIs: baselineKPIs.filter(kpi => kpi.name || kpi.range),
+            targetKPIs: targetKPIs.filter(kpi => kpi.name || kpi.range),
+            stretchKPIs: stretchKPIs.filter(kpi => kpi.name || kpi.range),
+          }
+          
+          // Save back to localStorage
+          localStorage.setItem('key-activities-data', JSON.stringify(activities))
+          console.log('Updated key activity:', activities[activityIndex])
+          navigate(`/key-activities?winId=${winId}`)
+        }
+      } catch (e) {
+        console.error('Failed to update activity:', e)
+      }
     }
-    console.log('Updating key activity:', activityData)
-    // TODO: Update in Azure Table Storage
-    navigate('/key-activities')
   }
 
   const handleCancel = () => {
-    navigate('/key-activities')
+    navigate(`/key-activities?winId=${winId}`)
   }
 
   return (
@@ -271,7 +314,6 @@ const UpdateKeyActivity = () => {
                             type="text"
                             value={kpi.range}
                             onChange={(e) => updateKPI('baseline', index, 'range', e.target.value)}
-                            placeholder="e.g., 75-100%"
                             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
                           />
                         </div>
@@ -327,7 +369,6 @@ const UpdateKeyActivity = () => {
                             type="text"
                             value={kpi.range}
                             onChange={(e) => updateKPI('target', index, 'range', e.target.value)}
-                            placeholder="e.g., 75-100%"
                             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
                           />
                         </div>
@@ -383,7 +424,6 @@ const UpdateKeyActivity = () => {
                             type="text"
                             value={kpi.range}
                             onChange={(e) => updateKPI('stretch', index, 'range', e.target.value)}
-                            placeholder="e.g., 75-100%"
                             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
                           />
                         </div>

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 interface KeyActivity {
   id: number
@@ -9,56 +9,92 @@ interface KeyActivity {
   deadline: string
   assignedTo: string
   assignedToAvatar: string
+  assignToHead?: string
+  assignedMustWin?: string
+  baselineKPIs?: Array<{name: string, range: string}>
+  targetKPIs?: Array<{name: string, range: string}>
+  stretchKPIs?: Array<{name: string, range: string}>
 }
+
+const STORAGE_KEY = 'key-activities-data'
 
 const KeyActivities = () => {
   const navigate = useNavigate()
-  const [selectedYear, setSelectedYear] = useState<number>(2026)
-
-  // Mock data - TODO: Replace with actual data from Azure Table Storage
-  const keyActivities: KeyActivity[] = [
-    {
-      id: 1,
-      title: 'CRM Transformation',
-      description: 'Reach tailgates of Apollo program',
-      subtasks: 2,
-      deadline: '2026-02-04',
-      assignedTo: 'Fredrik Eder',
-      assignedToAvatar: 'FE'
-    },
-    {
-      id: 2,
-      title: 'Self Service Merger',
-      description: 'Deliver a unified Scandinavian self-service platform for B2C and B2B customers to improve experience and efficiency.',
-      subtasks: 4,
-      deadline: '2026-03-01',
-      assignedTo: 'Fredrik Eder',
-      assignedToAvatar: 'FE'
-    },
-    {
-      id: 3,
-      title: 'Cost Efficiency',
-      description: 'By smart spending to drive sustainable growth.',
-      subtasks: 2,
-      deadline: '2026-02-02',
-      assignedTo: 'Caroline Lundback',
-      assignedToAvatar: 'CL'
-    },
-    {
-      id: 4,
-      title: 'Cloud Right Strategy',
-      description: 'Ensuring stable existing infrastructure and adheres to Telcom security requirement and compliance.',
-      subtasks: 2,
-      deadline: '2026-02-01',
-      assignedTo: 'Jonas Blom',
-      assignedToAvatar: 'JB'
+  const [searchParams] = useSearchParams()
+  const urlWinId = searchParams.get('winId')
+  const [selectedWinId, setSelectedWinId] = useState<number>(urlWinId ? Number(urlWinId) : 1) // Default to Win 1 or from URL
+  const [keyActivities, setKeyActivities] = useState<KeyActivity[]>([])
+  const [mustWins, setMustWins] = useState<any[]>([])
+  
+  // Load activities and must-wins from localStorage
+  useEffect(() => {
+    loadActivities()
+    loadMustWins()
+  }, [])
+  
+  // Update selectedWinId when URL changes
+  useEffect(() => {
+    if (urlWinId) {
+      setSelectedWinId(Number(urlWinId))
     }
-  ]
-
-  const getSubtaskProgress = (subtasks: number) => {
-    // Mock progress - TODO: Calculate actual progress from subtasks
-    const completed = Math.floor(Math.random() * subtasks)
-    return { completed, total: subtasks }
+  }, [urlWinId])
+  
+  const loadMustWins = () => {
+    const stored = localStorage.getItem('must-wins-data')
+    if (stored) {
+      try {
+        const parsedData = JSON.parse(stored)
+        setMustWins(parsedData)
+      } catch (e) {
+        console.error('Failed to parse must-wins:', e)
+      }
+    }
+  }
+  
+  const getMustWinPillars = (mustWinId: string) => {
+    const win = mustWins.find(w => w.id === Number(mustWinId))
+    return win?.assignedPillars || []
+  }
+  
+  const loadActivities = () => {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored) {
+      try {
+        const parsedData = JSON.parse(stored)
+        const mappedData = parsedData.map((activity: any) => ({
+          id: activity.id,
+          title: activity.title,
+          description: activity.description || '',
+          subtasks: 0, // Will be calculated from sub-tasks later
+          deadline: activity.deadline || '',
+          assignedTo: activity.assignToHead || '',
+          assignedToAvatar: activity.assignToHead ? activity.assignToHead.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'N/A',
+          assignedMustWin: activity.assignedMustWin || '',
+          baselineKPIs: activity.baselineKPIs || [],
+          targetKPIs: activity.targetKPIs || [],
+          stretchKPIs: activity.stretchKPIs || []
+        }))
+        setKeyActivities(mappedData)
+      } catch (e) {
+        console.error('Failed to parse stored activities:', e)
+      }
+    }
+  }
+  
+  const handleDeleteActivity = (activityId: number) => {
+    if (window.confirm('Are you sure you want to delete this key activity? This action cannot be undone.')) {
+      const stored = localStorage.getItem(STORAGE_KEY)
+      if (stored) {
+        try {
+          const activities = JSON.parse(stored)
+          const updatedActivities = activities.filter((activity: any) => activity.id !== activityId)
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedActivities))
+          loadActivities()
+        } catch (e) {
+          console.error('Failed to delete activity:', e)
+        }
+      }
+    }
   }
 
   const formatDeadline = (deadline: string) => {
@@ -66,125 +102,237 @@ const KeyActivities = () => {
     return date.toLocaleDateString('en-GB', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-')
   }
 
-  const getProgressPercentage = (completed: number, total: number) => {
-    return total > 0 ? Math.round((completed / total) * 100) : 0
-  }
-
-  const getProgressColor = (percentage: number) => {
-    if (percentage >= 75) return 'bg-green-500'
-    if (percentage >= 50) return 'bg-yellow-500'
-    if (percentage >= 25) return 'bg-orange-500'
-    return 'bg-red-500'
-  }
+  // Filter activities based on selected win
+  const filteredActivities = keyActivities.filter(activity => Number(activity.assignedMustWin) === selectedWinId)
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4">
         {/* Header Section with Action Bar */}
         <div className="mb-8">
-          <div className="flex justify-between items-start mb-2">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Key Activities</h1>
-              <p className="text-gray-600">Track and manage your team's important tasks and milestones and also create sub-tasks for each key activity</p>
-            </div>
+          <div className="flex justify-between items-start mb-8">
+            <div></div>
             
             <div className="flex items-center gap-4">
               <button
-                onClick={() => navigate('/key-activities/progress')}
+                onClick={() => navigate(`/key-activities/progress?winId=${selectedWinId}`)}
                 className="px-6 py-2.5 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors font-medium whitespace-nowrap"
               >
                 Update Progress
               </button>
               <button
-                onClick={() => navigate('/key-activities/create')}
+                onClick={() => navigate(`/key-activities/create?winId=${selectedWinId}`)}
                 className="px-6 py-2.5 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors font-medium whitespace-nowrap"
               >
-                Create a Sub-Task
+                Create Key Activity
               </button>
               
               <select
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                value={selectedWinId}
+                onChange={(e) => {
+                  const winId = Number(e.target.value)
+                  setSelectedWinId(winId)
+                  navigate(`/key-activities?winId=${winId}`)
+                }}
                 className="px-6 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
               >
-                <option value={2026}>Win-1</option>
-                <option value={2027}>Win-2</option>
-                <option value={2028}>Win-3</option>
+                {mustWins.map((win) => (
+                  <option key={win.id} value={win.id}>
+                    W{win.id} - {win.title}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Key Activities</h1>
+          <p className="text-gray-600 whitespace-nowrap overflow-hidden text-ellipsis">Track and manage your team's important tasks and milestones and also create sub-tasks for each key activity</p>
+        </div>
+
+        {/* Summary Section */}
+        <div className="ml-auto w-fit text-right">
+          <p className="text-xs text-gray-400 uppercase tracking-wide">Total Activities: <span className="text-sm font-semibold text-primary">{filteredActivities.length}</span></p>
         </div>
 
         {/* Key Activities List */}
         <div className="space-y-4">
-          {keyActivities.map((activity, index) => {
-            const progress = getSubtaskProgress(activity.subtasks)
-            const percentage = getProgressPercentage(progress.completed, progress.total)
-            const progressColor = getProgressColor(percentage)
+          {filteredActivities.map((activity, index) => {
+            const sequenceNumber = index + 1 // Sequential numbering starting from 1
 
             return (
               <div
                 key={activity.id}
                 className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg hover:shadow-orange-200 transition-shadow"
               >
-                <div className="flex items-center gap-6">
+                <div className="flex items-start gap-6">
                   {/* Number Badge */}
                   <div className="flex-shrink-0">
-                    <div className="w-12 h-12 bg-primary text-white rounded-lg flex items-center justify-center font-bold text-lg">
-                      {String(index + 1).padStart(2, '0')}
+                    <div className="w-16 h-16 bg-primary text-white rounded-lg flex items-center justify-center font-bold text-xl">
+                      K{sequenceNumber}
                     </div>
                   </div>
 
                   {/* Content */}
-                  <div 
-                    className="flex-1 min-w-0 cursor-pointer"
-                    onClick={() => navigate(`/key-activities/${activity.id}`)}
-                  >
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">{activity.title}</h3>
-                    <p className="text-sm text-gray-600 line-clamp-2">{activity.description}</p>
-                  </div>
-
-                  {/* Stats Section */}
-                  <div className="flex items-center gap-8">
-                    {/* Deadline */}
-                    <div className="text-center">
-                      <div className="text-xs text-gray-500 mb-1 flex items-center justify-center gap-1">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        Deadline
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-3">{activity.title}</h3>
+                    
+                    {/* Win and Pillar Badges */}
+                    {activity.assignedMustWin && (
+                      <div className="mb-3 flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
+                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2L8 8l-6 1 4.5 4L5.5 19 12 15.5 18.5 19l-1-6L22 9l-6-1z"/>
+                          </svg>
+                          W{activity.assignedMustWin}
+                        </span>
+                        {getMustWinPillars(activity.assignedMustWin).length > 0 && (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm text-gray-500">→</span>
+                            {getMustWinPillars(activity.assignedMustWin).map((pillar: string, idx: number) => (
+                              <span
+                                key={idx}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium"
+                              >
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                </svg>
+                                {pillar}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <div className="text-sm font-semibold text-gray-900">
-                        {formatDeadline(activity.deadline)}
+                    )}
+                    
+                    <p className="text-sm text-gray-600 leading-relaxed mb-4 whitespace-pre-line">
+                      {activity.description}
+                    </p>
+                    
+                    {/* KPIs Section */}
+                    {(activity.baselineKPIs && activity.baselineKPIs.length > 0 || activity.targetKPIs && activity.targetKPIs.length > 0 || activity.stretchKPIs && activity.stretchKPIs.length > 0) && (
+                      <div className="mb-4 grid grid-cols-3 gap-3">
+                        {/* Baseline KPIs */}
+                        {activity.baselineKPIs && activity.baselineKPIs.length > 0 && (
+                          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                            <h4 className="text-xs font-semibold text-orange-800 mb-2">Baseline</h4>
+                            <div className="space-y-1.5">
+                              {activity.baselineKPIs.filter(kpi => kpi.name || kpi.range).map((kpi, idx) => (
+                                <div key={idx} className="text-xs">
+                                  {kpi.name && <div className="font-medium text-gray-900">{kpi.name}</div>}
+                                  {kpi.range && <div className="text-gray-600">{kpi.range}</div>}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Target KPIs */}
+                        {activity.targetKPIs && activity.targetKPIs.length > 0 && (
+                          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                            <h4 className="text-xs font-semibold text-orange-800 mb-2">Target</h4>
+                            <div className="space-y-1.5">
+                              {activity.targetKPIs.filter(kpi => kpi.name || kpi.range).map((kpi, idx) => (
+                                <div key={idx} className="text-xs">
+                                  {kpi.name && <div className="font-medium text-gray-900">{kpi.name}</div>}
+                                  {kpi.range && <div className="text-gray-600">{kpi.range}</div>}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Stretch KPIs */}
+                        {activity.stretchKPIs && activity.stretchKPIs.length > 0 && (
+                          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                            <h4 className="text-xs font-semibold text-orange-800 mb-2">Stretch</h4>
+                            <div className="space-y-1.5">
+                              {activity.stretchKPIs.filter(kpi => kpi.name || kpi.range).map((kpi, idx) => (
+                                <div key={idx} className="text-xs">
+                                  {kpi.name && <div className="font-medium text-gray-900">{kpi.name}</div>}
+                                  {kpi.range && <div className="text-gray-600">{kpi.range}</div>}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    </div>
+                    )}
+                    
+                    {/* Bottom Info Section */}
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                      <div className="flex items-center gap-8">
+                        {/* Deadline */}
+                        <div className="flex items-center gap-2">
+                          <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <div>
+                            <span className="text-xs text-gray-500">Deadline </span>
+                            <span className="text-sm font-semibold text-gray-900">
+                              {formatDeadline(activity.deadline)}
+                            </span>
+                          </div>
+                        </div>
 
-                    {/* Assigned To */}
-                    <div className="text-center">
-                      <div className="text-xs text-gray-500 mb-1">Assigned to</div>
-                      <div className="flex items-center justify-center">
-                        <div 
-                          className="w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center text-xs font-semibold cursor-pointer"
-                          title={activity.assignedTo}
-                        >
-                          {activity.assignedToAvatar}
+                        {/* Assigned To */}
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-9 h-9 rounded-full bg-gray-700 text-white flex items-center justify-center text-xs font-semibold"
+                            title={activity.assignedTo}
+                          >
+                            {activity.assignedToAvatar}
+                          </div>
+                          <div>
+                            <span className="text-xs text-gray-500">Assigned to </span>
+                            <span className="text-sm font-semibold text-gray-900">{activity.assignedTo}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Edit Button */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        navigate(`/key-activities/update?id=${activity.id}`)
-                      }}
-                      className="p-2 text-gray-500 hover:text-primary hover:bg-orange-50 rounded-lg transition-colors"
-                      title="Edit Key Activity"
-                    >
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </button>
+                      {/* Edit Button */}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            navigate(`/sub-tasks/create?activityId=${activity.id}`)
+                          }}
+                          className="flex items-center gap-2 px-4 py-2 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50 rounded-lg transition-colors"
+                          title="Create Sub-task"
+                        >
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          <span className="text-sm font-medium">Add Sub-task</span>
+                        </button>
+                        
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            navigate(`/key-activities/update?id=${activity.id}&winId=${selectedWinId}`)
+                          }}
+                          className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-primary hover:bg-orange-50 rounded-lg transition-colors"
+                          title="Edit Key Activity"
+                        >
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                          <span className="text-sm font-medium">Edit</span>
+                        </button>
+                        
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteActivity(activity.id)
+                          }}
+                          className="flex items-center gap-2 px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete Key Activity"
+                        >
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          <span className="text-sm font-medium">Delete</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

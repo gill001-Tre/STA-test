@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 interface KeyActivity {
   id: number
@@ -13,47 +13,12 @@ interface KeyActivity {
 
 const STORAGE_KEY = 'key-activities-data'
 
-const initialKeyActivities: KeyActivity[] = [
-  {
-    id: 1,
-    number: '01',
-    title: 'IT Stack Modernization',
-    progress: 75,
-    status: 'on-track',
-    deadline: '2026-02-13',
-    assignedTo: 'Fredrik Eder'
-  },
-  {
-    id: 2,
-    number: '02',
-    title: 'CRM Transformation',
-    progress: 45,
-    status: 'in-progress',
-    deadline: '2026-03-15',
-    assignedTo: 'Caroline Lundberg'
-  },
-  {
-    id: 3,
-    number: '03',
-    title: 'Self Service Merger',
-    progress: 90,
-    status: 'on-track',
-    deadline: '2026-04-20',
-    assignedTo: 'Jennet Björn'
-  },
-  {
-    id: 4,
-    number: '04',
-    title: 'Cost Efficiency Drive',
-    progress: 20,
-    status: 'needs-attention',
-    deadline: '2026-05-10',
-    assignedTo: 'Fredrik Eder'
-  }
-]
+const initialKeyActivities: KeyActivity[] = []
 
 const UpdateKeyActivityProgress = () => {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const winId = searchParams.get('winId') || '1'
   
   // Load from localStorage or use initial data
   const [keyActivities, setKeyActivities] = useState<KeyActivity[]>(() => {
@@ -95,11 +60,7 @@ const UpdateKeyActivityProgress = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(keyActivities))
     console.log('Progress changes saved to localStorage:', keyActivities)
     // TODO: Later integrate with Azure Table Storage
-    navigate('/key-activities')
-  }
-
-  const handleBack = () => {
-    navigate(-1)
+    navigate(`/key-activities?winId=${winId}`)
   }
 
   const formatDate = (dateString: string) => {
@@ -218,39 +179,6 @@ const UpdateKeyActivityProgress = () => {
           </button>
         </div>
       </div>
-
-      <style>{`
-        .slider::-webkit-slider-thumb {
-          appearance: none;
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          background: #FF6600;
-          cursor: pointer;
-          border: 3px solid white;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        }
-        
-        .slider::-moz-range-thumb {
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          background: #FF6600;
-          cursor: pointer;
-          border: 3px solid white;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        }
-
-        .slider::-webkit-slider-runnable-track {
-          background: transparent;
-          height: 2px;
-        }
-
-        .slider::-moz-range-track {
-          background: transparent;
-          height: 2px;
-        }
-      `}</style>
     </div>
   )
 }

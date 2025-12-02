@@ -1,16 +1,23 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 const CreateSubTask = () => {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const keyActivityFromUrl = searchParams.get('keyActivity') || 'Key Activity 1'
   
   const [formData, setFormData] = useState({
-    keyActivity: '',
+    keyActivity: keyActivityFromUrl,
     title: '',
     description: '',
     assignToHead: '',
     deadline: ''
   })
+
+  // Update keyActivity when URL param changes
+  useEffect(() => {
+    setFormData(prev => ({ ...prev, keyActivity: keyActivityFromUrl }))
+  }, [keyActivityFromUrl])
 
   const keyActivities = [
     { id: 1, name: 'Key Activity 1' },
@@ -21,13 +28,43 @@ const CreateSubTask = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Sub-task data:', formData)
-    // TODO: Save to Azure Table Storage
-    navigate('/sub-tasks')
+    
+    // Load existing sub-tasks from localStorage
+    const stored = localStorage.getItem('sub-tasks-data')
+    let subTasks = []
+    let maxId = 0
+    
+    if (stored) {
+      try {
+        subTasks = JSON.parse(stored)
+        maxId = Math.max(...subTasks.map((t: any) => t.id), 0)
+      } catch (e) {
+        console.error('Failed to parse sub-tasks:', e)
+      }
+    }
+    
+    // Create new sub-task
+    const newSubTask = {
+      id: maxId + 1,
+      number: `T${maxId + 1}`,
+      title: formData.title,
+      description: formData.description,
+      deadline: formData.deadline,
+      assignedTo: formData.assignToHead,
+      assignedToAvatar: formData.assignToHead.split(' ').map((n: string) => n[0]).join('').toUpperCase(),
+      keyActivity: formData.keyActivity
+    }
+    
+    // Save to localStorage
+    subTasks.push(newSubTask)
+    localStorage.setItem('sub-tasks-data', JSON.stringify(subTasks))
+    
+    console.log('Sub-task created:', newSubTask)
+    navigate(`/sub-tasks?keyActivity=${encodeURIComponent(keyActivityFromUrl)}`)
   }
 
   const handleCancel = () => {
-    navigate('/dashboard')
+    navigate(`/sub-tasks?keyActivity=${encodeURIComponent(keyActivityFromUrl)}`)
   }
 
   return (
@@ -53,7 +90,7 @@ const CreateSubTask = () => {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 required
               >
-                <option value="">Key Activity 1</option>
+                <option value="">Select a Key Activity</option>
                 {keyActivities.map((activity) => (
                   <option key={activity.id} value={activity.name}>
                     {activity.name}

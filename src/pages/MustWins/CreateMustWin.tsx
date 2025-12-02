@@ -1,22 +1,56 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+
+interface Pillar {
+  id: number
+  number: string
+  title: string
+  description: string
+  objectives: string[]
+  assignedWins: number[]
+}
+
+interface MustWin {
+  id: number
+  title: string
+  description: string
+  progress: number
+  status: 'on-track' | 'in-progress' | 'needs-attention'
+  winOwner: string
+  owners: string[]
+  deadline: string
+  assignedPillars: string[]
+}
+
+const PILLARS_STORAGE_KEY = 'strategy-pillars-assignments'
+const MUST_WINS_STORAGE_KEY = 'must-wins-data'
 
 const CreateMustWin = () => {
   const navigate = useNavigate()
+  const [strategyPillars, setStrategyPillars] = useState<Pillar[]>([])
   const [formData, setFormData] = useState({
     year: 2026,
     title: '',
     description: '',
     assignedPillars: [] as string[],
-    assignToHead: '',
+    winOwner: '',
+    owners: [] as string[],
     deadline: ''
   })
+  const [ownerInput, setOwnerInput] = useState('')
 
-  const strategyPillars = [
-    'Cost Leadership via Technology Efficiency',
-    'Business Differentiation through Digital Innovation',
-    'Operational Excellence & Agility'
-  ]
+  // Load pillars from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem(PILLARS_STORAGE_KEY)
+    if (stored) {
+      try {
+        const pillars = JSON.parse(stored)
+        setStrategyPillars(pillars)
+      } catch (e) {
+        console.error('Failed to parse stored pillars:', e)
+      }
+    }
+  }, [])
 
   const handlePillarToggle = (pillar: string) => {
     setFormData(prev => ({
@@ -29,13 +63,72 @@ const CreateMustWin = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Creating Must-Win:', formData)
-    // TODO: Save to Azure Table Storage
+    
+    // Load existing must-wins from localStorage
+    const stored = localStorage.getItem(MUST_WINS_STORAGE_KEY)
+    let existingMustWins: MustWin[] = []
+    if (stored) {
+      try {
+        existingMustWins = JSON.parse(stored)
+      } catch (e) {
+        console.error('Failed to parse stored must-wins:', e)
+      }
+    }
+
+    // Generate new must-win ID
+    const newId = existingMustWins.length > 0 
+      ? Math.max(...existingMustWins.map(w => w.id)) + 1 
+      : 1
+
+    // Create new must-win
+    const newMustWin: MustWin = {
+      id: newId,
+      title: formData.title,
+      description: formData.description,
+      progress: 0,
+      status: 'needs-attention',
+      winOwner: formData.winOwner,
+      owners: formData.owners,
+      deadline: formData.deadline,
+      assignedPillars: formData.assignedPillars
+    }
+
+    // Add new must-win to array and save
+    const updatedMustWins = [...existingMustWins, newMustWin]
+    localStorage.setItem(MUST_WINS_STORAGE_KEY, JSON.stringify(updatedMustWins))
+    
+    // Update pillars' assignedWins arrays
+    if (formData.assignedPillars.length > 0) {
+      const storedPillars = localStorage.getItem(PILLARS_STORAGE_KEY)
+      if (storedPillars) {
+        try {
+          const pillars: Pillar[] = JSON.parse(storedPillars)
+          const updatedPillars = pillars.map(pillar => {
+            if (formData.assignedPillars.includes(pillar.title)) {
+              // Add the new must-win ID to this pillar's assignedWins
+              return {
+                ...pillar,
+                assignedWins: [...pillar.assignedWins, newId]
+              }
+            }
+            return pillar
+          })
+          localStorage.setItem(PILLARS_STORAGE_KEY, JSON.stringify(updatedPillars))
+          console.log('Updated pillars with new win assignment:', updatedPillars)
+        } catch (e) {
+          console.error('Failed to update pillars:', e)
+        }
+      }
+    }
+    
+    console.log('Created Must-Win:', newMustWin)
+    
+    // Navigate to must-wins list
     navigate('/must-wins')
   }
 
   const handleCancel = () => {
-    navigate('/dashboard')
+    navigate('/must-wins')
   }
 
   return (
@@ -114,13 +207,18 @@ const CreateMustWin = () => {
               <label className="block text-sm font-medium text-gray-700 mb-3">
                 Assign to Strategy Pillar
               </label>
+              {strategyPillars.length === 0 ? (
+                <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-500">
+                  No strategy pillars available. Please create pillars first.
+                </div>
+              ) : (
               <div className="space-y-2">
                 {strategyPillars.map((pillar) => (
                   <div
-                    key={pillar}
-                    onClick={() => handlePillarToggle(pillar)}
+                    key={pillar.id}
+                    onClick={() => handlePillarToggle(pillar.title)}
                     className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                      formData.assignedPillars.includes(pillar)
+                      formData.assignedPillars.includes(pillar.title)
                         ? 'border-primary bg-orange-50'
                         : 'border-gray-200 hover:border-gray-300 bg-white'
                     }`}
@@ -129,37 +227,100 @@ const CreateMustWin = () => {
                       {/* Checkbox */}
                       <div
                         className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                          formData.assignedPillars.includes(pillar)
+                          formData.assignedPillars.includes(pillar.title)
                             ? 'bg-primary border-primary'
                             : 'border-gray-300 bg-white'
                         }`}
                       >
-                        {formData.assignedPillars.includes(pillar) && (
+                        {formData.assignedPillars.includes(pillar.title) && (
                           <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                           </svg>
                         )}
                       </div>
-                      <span className="font-medium text-gray-900">{pillar}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="bg-primary text-white text-xs font-bold px-2 py-1 rounded">{pillar.number}</span>
+                        <span className="font-medium text-gray-900">{pillar.title}</span>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
+              )}
             </div>
 
-            {/* Assign to Head of Department */}
+            {/* Win Owner */}
             <div>
-              <label htmlFor="assignToHead" className="block text-sm font-medium text-gray-700 mb-2">
-                Assign to Head of Department
+              <label htmlFor="winOwner" className="block text-sm font-medium text-gray-700 mb-2">
+                Win Owner
               </label>
               <input
                 type="text"
-                id="assignToHead"
-                value={formData.assignToHead}
-                onChange={(e) => setFormData({ ...formData, assignToHead: e.target.value })}
+                id="winOwner"
+                value={formData.winOwner}
+                onChange={(e) => setFormData({ ...formData, winOwner: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                placeholder="Select Head of Department"
+                placeholder="Enter win owner name"
               />
+              <p className="text-xs text-gray-500 mt-1">Primary person responsible for this must-win</p>
+            </div>
+
+            {/* Assign to Owners */}
+            <div>
+              <label htmlFor="owners" className="block text-sm font-medium text-gray-700 mb-2">
+                Assign to Head of Departments (Press Enter to add)
+              </label>
+              <div className="space-y-2">
+                {/* Tags Display */}
+                {formData.owners.length > 0 && (
+                  <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    {formData.owners.map((owner, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white rounded-full text-sm font-medium"
+                      >
+                        <span>{owner}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormData({
+                              ...formData,
+                              owners: formData.owners.filter((_, i) => i !== idx)
+                            })
+                          }}
+                          className="hover:bg-orange-600 rounded-full p-0.5 transition-colors"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {/* Input Field */}
+                <input
+                  type="text"
+                  id="owners"
+                  value={ownerInput}
+                  onChange={(e) => setOwnerInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && ownerInput.trim()) {
+                      e.preventDefault()
+                      if (!formData.owners.includes(ownerInput.trim())) {
+                        setFormData({
+                          ...formData,
+                          owners: [...formData.owners, ownerInput.trim()]
+                        })
+                      }
+                      setOwnerInput('')
+                    }
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="Type name and press Enter to add"
+                />
+                <p className="text-xs text-gray-500">Add Head of Departments who will be responsible for this must-win</p>
+              </div>
             </div>
 
             {/* Deadline */}
