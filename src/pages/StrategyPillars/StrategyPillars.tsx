@@ -28,7 +28,6 @@ const StrategyPillars = () => {
   const [selectedPillarId, setSelectedPillarId] = useState<number | null>(null)
   const [selectedWins, setSelectedWins] = useState<number[]>([])
   const [pillars, setPillars] = useState<Pillar[]>([])
-  const [refreshKey, setRefreshKey] = useState(0)
 
   // Load pillars when year changes
   useEffect(() => {
@@ -47,7 +46,7 @@ const StrategyPillars = () => {
     } else {
       setPillars([])
     }
-  }, [selectedYear, refreshKey])
+  }, [selectedYear])
 
   // Reload data when navigating back to this page
   useEffect(() => {

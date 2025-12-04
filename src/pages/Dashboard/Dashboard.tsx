@@ -5,10 +5,6 @@ import StatusBadge from '@/components/UI/StatusBadge'
 import { useYear } from '@/contexts/YearContext'
 import { loadFromYearStorage, STORAGE_KEYS } from '@/utils/storageHelper'
 
-const STORAGE_KEY = 'strategy-pillars-assignments'
-const MUST_WINS_STORAGE_KEY = 'must-wins-data'
-const KEY_ACTIVITIES_STORAGE_KEY = 'key-activities-data'
-
 interface PillarAssignment {
   id: number
   number: string
@@ -17,35 +13,15 @@ interface PillarAssignment {
 }
 
 // Helper function to get assigned pillars for a must-win (year-aware)
-const getAssignedPillars = (mustWinId: number, selectedYear: number) => {
+const getAssignedPillars = (mustWinId: number, selectedYear: number): PillarAssignment[] => {
   const stored = loadFromYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, selectedYear)
   if (!stored) return []
   
   try {
     const pillars = Array.isArray(stored) ? stored : []
-    return pillars.filter((pillar: any) => pillar.assignedWins && pillar.assignedWins.includes(mustWinId))
+    return pillars.filter((pillar: PillarAssignment) => pillar.assignedWins && pillar.assignedWins.includes(mustWinId))
   } catch (e) {
     console.error('Failed to get assigned pillars:', e)
-    return []
-  }
-}
-
-// Helper function to get all pillars with their assigned wins count
-const getPillarsWithWinCount = () => {
-  const stored = localStorage.getItem(STORAGE_KEY)
-  if (!stored) return []
-  
-  try {
-    const pillars: PillarAssignment[] = JSON.parse(stored)
-    return pillars.map(pillar => ({
-      id: pillar.id,
-      number: pillar.number,
-      title: pillar.title,
-      winsCount: pillar.assignedWins.length,
-      assignedWins: pillar.assignedWins
-    }))
-  } catch (e) {
-    console.error('Failed to parse pillar assignments:', e)
     return []
   }
 }
@@ -91,7 +67,7 @@ const mockData = {
 
 const Dashboard = () => {
   const { selectedYear } = useYear()
-  const [selectedWin, setSelectedWin] = useState('')
+  const [selectedWin, setSelectedWin] = useState<number | string>('')
   const [mustWins, setMustWins] = useState<MustWin[]>(mockData.mustWins)
   const [keyActivities, setKeyActivities] = useState<KeyActivity[]>(mockData.keyActivities)
   const [strategyPillarsWithWins, setStrategyPillarsWithWins] = useState<any[]>([])
@@ -223,6 +199,13 @@ const Dashboard = () => {
       window.removeEventListener('focus', handleFocus)
     }
   }, [selectedYear])
+
+  // Set default win to first available win
+  useEffect(() => {
+    if (mustWins.length > 0 && !selectedWin) {
+      setSelectedWin(mustWins[0].id)
+    }
+  }, [mustWins])
 
   // Helper function to count sub-tasks for a specific key activity
   const getSubTasksCountForActivity = (activity: any): number => {
@@ -427,13 +410,12 @@ const Dashboard = () => {
           <h2 className="text-2xl font-bold text-gray-900">Key Activities</h2>
           <select
             value={selectedWin}
-            onChange={(e) => setSelectedWin(e.target.value)}
+            onChange={(e) => setSelectedWin(Number(e.target.value))}
             className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary"
           >
-            <option value="">All Wins</option>
             {mustWins.map((win) => (
               <option key={win.id} value={win.id}>
-                {win.title}
+                Win {win.id} - {win.title}
               </option>
             ))}
           </select>

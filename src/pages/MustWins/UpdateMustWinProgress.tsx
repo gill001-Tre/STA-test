@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useYear } from '@/contexts/YearContext'
+import { loadFromYearStorage, saveToYearStorage, STORAGE_KEYS } from '@/utils/storageHelper'
 
 interface MustWin {
   id: number
@@ -13,20 +15,17 @@ interface MustWin {
   assignedPillars?: string[]
 }
 
-const STORAGE_KEY = 'must-wins-data'
-
-const initialMustWins: MustWin[] = []
-
 const UpdateMustWinProgress = () => {
   const navigate = useNavigate()
+  const { selectedYear } = useYear()
   const [originalData, setOriginalData] = useState<any[]>([])
   
-  // Load from localStorage or use initial data
+  // Load from year-aware localStorage or use initial data
   const [mustWins, setMustWins] = useState<MustWin[]>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
+    const stored = loadFromYearStorage(STORAGE_KEYS.MUST_WINS, selectedYear)
     if (stored) {
       try {
-        const parsedData = JSON.parse(stored)
+        const parsedData = Array.isArray(stored) ? stored : []
         setOriginalData(parsedData) // Keep original data for saving
         // Map data to ensure correct structure with owners array
         return parsedData.map((win: any) => ({
@@ -42,10 +41,10 @@ const UpdateMustWinProgress = () => {
         }))
       } catch (e) {
         console.error('Failed to parse stored must-wins:', e)
-        return initialMustWins
+        return []
       }
     }
-    return initialMustWins
+    return []
   })
 
   const handleProgressChange = (id: number, newProgress: number) => {
@@ -91,11 +90,10 @@ const UpdateMustWinProgress = () => {
       return original
     })
     
-    // Save to localStorage
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedData))
-    console.log('Progress changes saved to localStorage:', updatedData)
-    // TODO: Later integrate with Azure Table Storage
-    navigate('/dashboard')
+    // Save to year-aware storage
+    saveToYearStorage(STORAGE_KEYS.MUST_WINS, updatedData, selectedYear)
+    console.log('Progress changes saved:', updatedData)
+    navigate('/must-wins')
   }
 
   return (

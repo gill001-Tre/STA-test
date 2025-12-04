@@ -16,8 +16,6 @@ interface MustWin {
   status?: 'on-track' | 'in-progress' | 'needs-attention'
 }
 
-const STORAGE_KEY = 'must-wins-data'
-
 const MustWins = () => {
   const navigate = useNavigate()
   const location = useLocation()

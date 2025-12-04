@@ -13,9 +13,6 @@ interface KeyActivity {
   assignToHead: string
 }
 
-const KEY_ACTIVITIES_STORAGE_KEY = 'key-activities-data'
-const MUST_WINS_STORAGE_KEY = 'must-wins-data'
-
 const UpdateKeyActivitiesProgress = () => {
   const navigate = useNavigate()
   const { selectedYear } = useYear()

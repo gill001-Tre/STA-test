@@ -17,7 +17,7 @@ const CreateKeyActivity = () => {
   const [formData, setFormData] = useState({
     year: new Date().getFullYear(),
     title: '',
-    assignedMustWin: winId,
+    assignedMustWin: winId ? Number(winId) : '',
     assignToHead: '',
     description: '',
     deadline: '',
@@ -47,7 +47,7 @@ const CreateKeyActivity = () => {
 
   // Update assignedMustWin when winId changes
   useEffect(() => {
-    setFormData(prev => ({ ...prev, assignedMustWin: winId }))
+    setFormData(prev => ({ ...prev, assignedMustWin: winId ? Number(winId) : '' }))
   }, [winId])
 
   const addKPI = (type: 'baseline' | 'target' | 'stretch') => {
@@ -185,7 +185,7 @@ const CreateKeyActivity = () => {
                 </label>
                 <select
                   value={formData.assignedMustWin}
-                  onChange={(e) => setFormData({ ...formData, assignedMustWin: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, assignedMustWin: e.target.value ? Number(e.target.value) : '' })}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
                   required
                 >

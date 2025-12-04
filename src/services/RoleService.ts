@@ -12,7 +12,7 @@ interface RolePermissions {
 class RoleService {
   getPermissions(role: UserRole): RolePermissions {
     const permissions: Record<UserRole, RolePermissions> = {
-      ctio: {
+      CTIO: {
         canCreate: true,
         canEdit: true,
         canDelete: true,
@@ -20,7 +20,7 @@ class RoleService {
         canManageUsers: true,
         canAccessPages: ['/', '/must-wins', '/key-activities', '/sub-tasks', '/settings'],
       },
-      head_of_department: {
+      HeadOfDepartment: {
         canCreate: true,
         canEdit: true,
         canDelete: true,
@@ -28,7 +28,7 @@ class RoleService {
         canManageUsers: false,
         canAccessPages: ['/', '/must-wins', '/key-activities', '/sub-tasks'],
       },
-      team_chef: {
+      Teamchef: {
         canCreate: true,
         canEdit: true,
         canDelete: true,
@@ -36,7 +36,7 @@ class RoleService {
         canManageUsers: false,
         canAccessPages: ['/', '/must-wins', '/key-activities', '/sub-tasks'],
       },
-      employee: {
+      Employee: {
         canCreate: false,
         canEdit: false,
         canDelete: false,
@@ -75,10 +75,10 @@ class RoleService {
 
   getRoleLabel(role: UserRole): string {
     const labels: Record<UserRole, string> = {
-      ctio: 'CTIO',
-      head_of_department: 'HeadOf',
-      team_chef: 'TeamChef',
-      employee: 'Employee',
+      CTIO: 'CTIO',
+      HeadOfDepartment: 'HeadOf',
+      Teamchef: 'TeamChef',
+      Employee: 'Employee',
     }
     return labels[role]
   }

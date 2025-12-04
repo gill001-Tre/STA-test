@@ -13,12 +13,12 @@ interface KeyActivity {
   assignedToAvatar: string
   assignToHead?: string
   assignedMustWin?: string
+  progress?: number
+  status?: 'on-track' | 'in-progress' | 'needs-attention'
   baselineKPIs?: Array<{name: string, range: string}>
   targetKPIs?: Array<{name: string, range: string}>
   stretchKPIs?: Array<{name: string, range: string}>
 }
-
-const STORAGE_KEY = 'key-activities-data'
 
 const KeyActivities = () => {
   const navigate = useNavigate()
@@ -26,7 +26,7 @@ const KeyActivities = () => {
   const { selectedYear } = useYear()
   const [searchParams] = useSearchParams()
   const urlWinId = searchParams.get('winId')
-  const [selectedWinId, setSelectedWinId] = useState<number>(urlWinId ? Number(urlWinId) : 1) // Default to Win 1 or from URL
+  const [selectedWinId, setSelectedWinId] = useState<number | string>(urlWinId ? Number(urlWinId) : '') // Default to All or from URL
   const [keyActivities, setKeyActivities] = useState<KeyActivity[]>([])
   const [mustWins, setMustWins] = useState<any[]>([])
   
@@ -36,11 +36,31 @@ const KeyActivities = () => {
     loadMustWins()
   }, [selectedYear])
   
+  // Set default win to first available win when must-wins are loaded
+  useEffect(() => {
+    if (mustWins.length > 0 && !urlWinId) {
+      setSelectedWinId(mustWins[0].id)
+      navigate(`/key-activities?winId=${mustWins[0].id}`)
+    }
+  }, [mustWins])
+  
   // Reload when navigating back to this page
   useEffect(() => {
     loadActivities()
     loadMustWins()
   }, [location.pathname])
+  
+  // Force reload when window regains focus
+  useEffect(() => {
+    const handleFocus = () => {
+      console.log('Window focused - reloading key activities')
+      loadActivities()
+      loadMustWins()
+    }
+    
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [selectedYear])
   
   // Update selectedWinId when URL changes
   useEffect(() => {
@@ -80,6 +100,8 @@ const KeyActivities = () => {
           assignedTo: activity.assignToHead || '',
           assignedToAvatar: activity.assignToHead ? activity.assignToHead.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'N/A',
           assignedMustWin: activity.assignedMustWin || '',
+          progress: activity.progress || 0,
+          status: activity.status || 'needs-attention',
           baselineKPIs: activity.baselineKPIs || [],
           targetKPIs: activity.targetKPIs || [],
           stretchKPIs: activity.stretchKPIs || []
@@ -112,7 +134,13 @@ const KeyActivities = () => {
   }
 
   // Filter activities based on selected win
-  const filteredActivities = keyActivities.filter(activity => Number(activity.assignedMustWin) === selectedWinId)
+  const filteredActivities = !selectedWinId 
+    ? keyActivities 
+    : keyActivities.filter(activity => {
+      const activityWinId = activity.assignedMustWin
+      const selectedId = selectedWinId
+      return Number(activityWinId) === Number(selectedId)
+    })
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -139,9 +167,9 @@ const KeyActivities = () => {
               <select
                 value={selectedWinId}
                 onChange={(e) => {
-                  const winId = Number(e.target.value)
-                  setSelectedWinId(winId)
-                  navigate(`/key-activities?winId=${winId}`)
+                  const value = Number(e.target.value)
+                  setSelectedWinId(value)
+                  navigate(`/key-activities?winId=${value}`)
                 }}
                 className="px-6 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
               >
@@ -297,22 +325,9 @@ const KeyActivities = () => {
                         </div>
                       </div>
 
-                      {/* Edit Button */}
+                      {/* Action Buttons */}
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            navigate(`/sub-tasks/create?activityId=${activity.id}`)
-                          }}
-                          className="flex items-center gap-2 px-4 py-2 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50 rounded-lg transition-colors"
-                          title="Create Sub-task"
-                        >
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                          </svg>
-                          <span className="text-sm font-medium">Add Sub-task</span>
-                        </button>
-                        
+                        {/* Edit Button */}
                         <button
                           onClick={(e) => {
                             e.stopPropagation()

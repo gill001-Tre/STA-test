@@ -7,27 +7,77 @@ const CreateSubTask = () => {
   const navigate = useNavigate()
   const { selectedYear } = useYear()
   const [searchParams] = useSearchParams()
-  const keyActivityFromUrl = searchParams.get('keyActivity') || 'Key Activity 1'
+  const keyActivityIdFromUrl = searchParams.get('keyActivityId')
+  
+  const [mustWins, setMustWins] = useState<any[]>([])
+  const [keyActivities, setKeyActivities] = useState<any[]>([])
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_selectedMustWinId, setSelectedMustWinId] = useState<string>('')
   
   const [formData, setFormData] = useState({
-    keyActivity: keyActivityFromUrl,
+    mustWin: '',
+    keyActivity: keyActivityIdFromUrl ? Number(keyActivityIdFromUrl) : '',
     title: '',
     description: '',
     assignToHead: '',
     deadline: ''
   })
 
-  // Update keyActivity when URL param changes
+  // Load must-wins and key activities from year-aware storage
   useEffect(() => {
-    setFormData(prev => ({ ...prev, keyActivity: keyActivityFromUrl }))
-  }, [keyActivityFromUrl])
+    const storedMustWins = loadFromYearStorage(STORAGE_KEYS.MUST_WINS, selectedYear)
+    if (storedMustWins) {
+      try {
+        const wins = Array.isArray(storedMustWins) ? storedMustWins : []
+        setMustWins(wins)
+      } catch (e) {
+        console.error('Failed to parse must-wins:', e)
+      }
+    }
 
-  const keyActivities = [
-    { id: 1, name: 'Key Activity 1' },
-    { id: 2, name: 'Key Activity 2' },
-    { id: 3, name: 'Key Activity 3' },
-    { id: 4, name: 'Key Activity 4' }
-  ]
+    const storedActivities = loadFromYearStorage(STORAGE_KEYS.KEY_ACTIVITIES, selectedYear)
+    if (storedActivities) {
+      try {
+        const activities = Array.isArray(storedActivities) ? storedActivities : []
+        setKeyActivities(activities)
+        
+        // If keyActivityId is in URL, pre-populate the form
+        if (keyActivityIdFromUrl) {
+          const activity = activities.find((a: any) => a.id === Number(keyActivityIdFromUrl))
+          if (activity) {
+            setFormData(prev => ({
+              ...prev,
+              mustWin: activity.assignedMustWin,
+              keyActivity: Number(keyActivityIdFromUrl)
+            }))
+            setSelectedMustWinId(String(activity.assignedMustWin))
+          }
+        }
+      } catch (e) {
+        console.error('Failed to parse key activities:', e)
+      }
+    }
+  }, [selectedYear, keyActivityIdFromUrl])
+
+  // Filter key activities based on selected must-win
+  const filteredKeyActivities = formData.mustWin
+    ? keyActivities.filter((activity: any) => activity.assignedMustWin === Number(formData.mustWin))
+    : []
+
+  const handleMustWinChange = (winId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      mustWin: winId,
+      keyActivity: '' // Reset key activity when must-win changes
+    }))
+  }
+
+  const handleKeyActivityChange = (activityId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      keyActivity: activityId
+    }))
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -45,6 +95,9 @@ const CreateSubTask = () => {
         console.error('Failed to parse sub-tasks:', e)
       }
     }
+
+    // Get selected key activity object
+    const selectedActivity = keyActivities.find((a: any) => a.id === Number(formData.keyActivity))
     
     // Create new sub-task
     const newSubTask = {
@@ -55,7 +108,8 @@ const CreateSubTask = () => {
       deadline: formData.deadline,
       assignedTo: formData.assignToHead,
       assignedToAvatar: formData.assignToHead.split(' ').map((n: string) => n[0]).join('').toUpperCase(),
-      keyActivity: formData.keyActivity
+      keyActivity: selectedActivity?.title || formData.keyActivity,
+      assignedKeyActivityId: Number(formData.keyActivity)
     }
     
     // Save to year-aware storage
@@ -63,11 +117,11 @@ const CreateSubTask = () => {
     saveToYearStorage(STORAGE_KEYS.SUB_TASKS, subTasks, selectedYear)
     
     console.log('Sub-task created:', newSubTask)
-    navigate(`/sub-tasks?keyActivity=${encodeURIComponent(keyActivityFromUrl)}`)
+    navigate(`/sub-tasks?keyActivityId=${formData.keyActivity}`)
   }
 
   const handleCancel = () => {
-    navigate(`/sub-tasks?keyActivity=${encodeURIComponent(keyActivityFromUrl)}`)
+    navigate('/sub-tasks')
   }
 
   return (
@@ -82,21 +136,44 @@ const CreateSubTask = () => {
         {/* Form */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Key Activity Dropdown */}
+            {/* Must-Win Dropdown */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Key activity
+                Must-Win
               </label>
               <select
-                value={formData.keyActivity}
-                onChange={(e) => setFormData({ ...formData, keyActivity: e.target.value })}
+                value={formData.mustWin}
+                onChange={(e) => handleMustWinChange(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 required
               >
-                <option value="">Select a Key Activity</option>
-                {keyActivities.map((activity) => (
-                  <option key={activity.id} value={activity.name}>
-                    {activity.name}
+                <option value="">Select a Must-Win</option>
+                {mustWins.map((win) => (
+                  <option key={win.id} value={win.id}>
+                    {win.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Key Activity Dropdown */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Key Activity
+              </label>
+              <select
+                value={formData.keyActivity}
+                onChange={(e) => handleKeyActivityChange(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                required
+                disabled={!formData.mustWin}
+              >
+                <option value="">
+                  {formData.mustWin ? 'Select a Key Activity' : 'Select a Must-Win first'}
+                </option>
+                {filteredKeyActivities.map((activity) => (
+                  <option key={activity.id} value={activity.id}>
+                    {activity.title}
                   </option>
                 ))}
               </select>

@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useYear } from '@/contexts/YearContext'
+import { loadFromYearStorage, saveToYearStorage, STORAGE_KEYS } from '@/utils/storageHelper'
 
 interface KeyActivity {
   id: number
@@ -11,19 +13,29 @@ interface KeyActivity {
   assignedTo: string
 }
 
-const STORAGE_KEY = 'key-activities-data'
-
-const initialKeyActivities: KeyActivity[] = []
-
 const UpdateKeyActivityProgress = () => {
   const navigate = useNavigate()
+  const { selectedYear } = useYear()
   const [searchParams] = useSearchParams()
   const winId = searchParams.get('winId') || '1'
+  const [originalData, setOriginalData] = useState<any[]>([])
   
-  // Load from localStorage or use initial data
+  // Load from year-aware storage or use initial data
   const [keyActivities, setKeyActivities] = useState<KeyActivity[]>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    return stored ? JSON.parse(stored) : initialKeyActivities
+    const stored = loadFromYearStorage(STORAGE_KEYS.KEY_ACTIVITIES, selectedYear)
+    if (stored && Array.isArray(stored)) {
+      setOriginalData(stored)
+      return stored.map((activity: any) => ({
+        id: activity.id,
+        number: `K${activity.id}`,
+        title: activity.title,
+        progress: activity.progress || 0,
+        status: activity.status || 'needs-attention',
+        deadline: activity.deadline || '',
+        assignedTo: activity.assignToHead || ''
+      }))
+    }
+    return []
   })
 
   const handleProgressChange = (id: number, newProgress: number) => {
@@ -56,10 +68,22 @@ const UpdateKeyActivityProgress = () => {
   }
 
   const handleSaveChanges = () => {
-    // Save to localStorage
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(keyActivities))
-    console.log('Progress changes saved to localStorage:', keyActivities)
-    // TODO: Later integrate with Azure Table Storage
+    // Merge progress updates back into original data to preserve all fields
+    const updatedData = originalData.map(original => {
+      const updated = keyActivities.find(a => a.id === original.id)
+      if (updated) {
+        return {
+          ...original,
+          progress: updated.progress,
+          status: updated.status
+        }
+      }
+      return original
+    })
+    
+    // Save to year-aware storage
+    saveToYearStorage(STORAGE_KEYS.KEY_ACTIVITIES, updatedData, selectedYear)
+    console.log('Progress changes saved:', updatedData)
     navigate(`/key-activities?winId=${winId}`)
   }
 
