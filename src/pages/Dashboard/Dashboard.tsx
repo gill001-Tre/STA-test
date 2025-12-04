@@ -16,16 +16,16 @@ interface PillarAssignment {
   assignedWins: number[]
 }
 
-// Helper function to get assigned pillars for a must-win
-const getAssignedPillars = (mustWinId: number) => {
-  const stored = localStorage.getItem(STORAGE_KEY)
+// Helper function to get assigned pillars for a must-win (year-aware)
+const getAssignedPillars = (mustWinId: number, selectedYear: number) => {
+  const stored = loadFromYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, selectedYear)
   if (!stored) return []
   
   try {
-    const pillars: PillarAssignment[] = JSON.parse(stored)
-    return pillars.filter(pillar => pillar.assignedWins.includes(mustWinId))
+    const pillars = Array.isArray(stored) ? stored : []
+    return pillars.filter((pillar: any) => pillar.assignedWins && pillar.assignedWins.includes(mustWinId))
   } catch (e) {
-    console.error('Failed to parse pillar assignments:', e)
+    console.error('Failed to get assigned pillars:', e)
     return []
   }
 }
@@ -347,7 +347,7 @@ const Dashboard = () => {
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Must-Wins</h2>
         <div className="grid grid-cols-2 gap-4">
           {mustWins.map((win) => {
-            const assignedPillars = getAssignedPillars(win.id)
+            const assignedPillars = getAssignedPillars(win.id, selectedYear)
             
             return (
               <div key={win.id} className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
