@@ -97,7 +97,8 @@ const Header = () => {
 
           {/* Right side - Navigation, Year Selector, and Profile */}
           <div className="flex items-center space-x-6">
-            {/* Navigation */}
+            {/* Navigation - Only show for CTIO, HeadOfDepartment, Teamchef */}
+            {user?.role !== 'Employee' && (
             <nav className="hidden md:flex space-x-6">
               {navItems.map((item) => (
                 <Link
@@ -260,6 +261,7 @@ const Header = () => {
                 )}
               </div>
             </nav>
+            )}
 
             {/* Year Selector */}
             <select

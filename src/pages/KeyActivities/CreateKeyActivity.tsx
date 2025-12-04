@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useYear } from '@/contexts/YearContext'
+import { loadFromYearStorage, saveToYearStorage, STORAGE_KEYS } from '@/utils/storageHelper'
 
 interface KPI {
   name: string
@@ -8,6 +10,7 @@ interface KPI {
 
 const CreateKeyActivity = () => {
   const navigate = useNavigate()
+  const { selectedYear } = useYear()
   const [searchParams] = useSearchParams()
   const winId = searchParams.get('winId') || '1'
   
@@ -77,12 +80,12 @@ const CreateKeyActivity = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Load existing activities from localStorage
-    const stored = localStorage.getItem('key-activities-data')
+    // Load existing activities from year-aware storage
+    const stored = loadFromYearStorage(STORAGE_KEYS.KEY_ACTIVITIES, selectedYear)
     let existingActivities = []
     if (stored) {
       try {
-        existingActivities = JSON.parse(stored)
+        existingActivities = stored
       } catch (e) {
         console.error('Failed to parse stored activities:', e)
       }
@@ -105,7 +108,7 @@ const CreateKeyActivity = () => {
     
     // Add new activity to array and save
     const updatedActivities = [...existingActivities, activityData]
-    localStorage.setItem('key-activities-data', JSON.stringify(updatedActivities))
+    saveToYearStorage(STORAGE_KEYS.KEY_ACTIVITIES, updatedActivities, selectedYear)
     
     console.log('Created key activity:', activityData)
     // TODO: Save to Azure Table Storage

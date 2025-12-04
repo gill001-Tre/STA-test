@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useYear } from '@/contexts/YearContext'
+import { loadFromYearStorage, saveToYearStorage, STORAGE_KEYS } from '@/utils/storageHelper'
 
 interface Pillar {
   id: number
@@ -10,12 +12,10 @@ interface Pillar {
   assignedWins: number[]
 }
 
-const STORAGE_KEY = 'strategy-pillars-assignments'
-
 const CreateStrategyPillar = () => {
   const navigate = useNavigate()
+  const { selectedYear } = useYear()
   const [formData, setFormData] = useState({
-    year: new Date().getFullYear(),
     title: '',
     description: ''
   })
@@ -23,12 +23,12 @@ const CreateStrategyPillar = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Load existing pillars from localStorage
-    const stored = localStorage.getItem(STORAGE_KEY)
+    // Load existing pillars from year-aware storage
+    const stored = loadFromYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, selectedYear)
     let existingPillars: Pillar[] = []
     if (stored) {
       try {
-        existingPillars = JSON.parse(stored)
+        existingPillars = Array.isArray(stored) ? stored : []
       } catch (e) {
         console.error('Failed to parse stored pillars:', e)
       }
@@ -55,11 +55,11 @@ const CreateStrategyPillar = () => {
       assignedWins: []
     }
 
-    // Add new pillar to array and save
+    // Add new pillar to array and save to year-aware storage
     const updatedPillars = [...existingPillars, newPillar]
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPillars))
+    saveToYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, updatedPillars, selectedYear)
     
-    console.log('Created pillar:', newPillar)
+    console.log(`Created pillar for year ${selectedYear}:`, newPillar)
     
     // Navigate back to strategy pillars list
     navigate('/strategy-pillars')

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useYear } from '@/contexts/YearContext'
+import { loadFromYearStorage, saveToYearStorage, STORAGE_KEYS } from '@/utils/storageHelper'
 
 interface KeyActivity {
   id: number
@@ -20,17 +22,18 @@ const STORAGE_KEY = 'key-activities-data'
 
 const KeyActivities = () => {
   const navigate = useNavigate()
+  const { selectedYear } = useYear()
   const [searchParams] = useSearchParams()
   const urlWinId = searchParams.get('winId')
   const [selectedWinId, setSelectedWinId] = useState<number>(urlWinId ? Number(urlWinId) : 1) // Default to Win 1 or from URL
   const [keyActivities, setKeyActivities] = useState<KeyActivity[]>([])
   const [mustWins, setMustWins] = useState<any[]>([])
   
-  // Load activities and must-wins from localStorage
+  // Load activities and must-wins from year-aware storage
   useEffect(() => {
     loadActivities()
     loadMustWins()
-  }, [])
+  }, [selectedYear])
   
   // Update selectedWinId when URL changes
   useEffect(() => {
@@ -40,10 +43,10 @@ const KeyActivities = () => {
   }, [urlWinId])
   
   const loadMustWins = () => {
-    const stored = localStorage.getItem('must-wins-data')
+    const stored = loadFromYearStorage(STORAGE_KEYS.MUST_WINS, selectedYear)
     if (stored) {
       try {
-        const parsedData = JSON.parse(stored)
+        const parsedData = stored
         setMustWins(parsedData)
       } catch (e) {
         console.error('Failed to parse must-wins:', e)
@@ -57,10 +60,10 @@ const KeyActivities = () => {
   }
   
   const loadActivities = () => {
-    const stored = localStorage.getItem(STORAGE_KEY)
+    const stored = loadFromYearStorage(STORAGE_KEYS.KEY_ACTIVITIES, selectedYear)
     if (stored) {
       try {
-        const parsedData = JSON.parse(stored)
+        const parsedData = stored
         const mappedData = parsedData.map((activity: any) => ({
           id: activity.id,
           title: activity.title,
@@ -83,12 +86,11 @@ const KeyActivities = () => {
   
   const handleDeleteActivity = (activityId: number) => {
     if (window.confirm('Are you sure you want to delete this key activity? This action cannot be undone.')) {
-      const stored = localStorage.getItem(STORAGE_KEY)
+      const stored = loadFromYearStorage(STORAGE_KEYS.KEY_ACTIVITIES, selectedYear)
       if (stored) {
         try {
-          const activities = JSON.parse(stored)
-          const updatedActivities = activities.filter((activity: any) => activity.id !== activityId)
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedActivities))
+          const updatedActivities = stored.filter((activity: any) => activity.id !== activityId)
+          saveToYearStorage(STORAGE_KEYS.KEY_ACTIVITIES, updatedActivities, selectedYear)
           loadActivities()
         } catch (e) {
           console.error('Failed to delete activity:', e)

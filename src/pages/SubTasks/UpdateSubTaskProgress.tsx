@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useYear } from '@/contexts/YearContext'
+import { loadFromYearStorage, saveToYearStorage, STORAGE_KEYS } from '@/utils/storageHelper'
 
 interface SubTask {
   id: number
@@ -19,15 +21,18 @@ const initialSubTasks: SubTask[] = []
 
 const UpdateSubTaskProgress = () => {
   const navigate = useNavigate()
+  const { selectedYear } = useYear()
   const [searchParams] = useSearchParams()
   const keyActivityFromUrl = searchParams.get('keyActivity') || 'Key Activity 1'
   const [selectedKeyActivity, setSelectedKeyActivity] = useState(keyActivityFromUrl)
   
-  // Load from localStorage or use initial data
-  const [subTasks, setSubTasks] = useState<SubTask[]>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    return stored ? JSON.parse(stored) : initialSubTasks
-  })
+  // Load from year-aware storage or use initial data
+  const [subTasks, setSubTasks] = useState<SubTask[]>(initialSubTasks)
+  
+  useEffect(() => {
+    const stored = loadFromYearStorage(STORAGE_KEYS.SUB_TASKS, selectedYear)
+    setSubTasks(stored || initialSubTasks)
+  }, [selectedYear])
 
   // Filter tasks by selected key activity
   const filteredSubTasks = subTasks.filter(task => task.keyActivity === selectedKeyActivity)
@@ -62,9 +67,9 @@ const UpdateSubTaskProgress = () => {
   }
 
   const handleSaveChanges = () => {
-    // Save to localStorage
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(subTasks))
-    console.log('Progress changes saved to localStorage:', subTasks)
+    // Save to year-aware storage
+    saveToYearStorage(STORAGE_KEYS.SUB_TASKS, subTasks, selectedYear)
+    console.log('Progress changes saved to year-aware storage:', subTasks)
     // TODO: Later integrate with Azure Table Storage
     navigate(`/sub-tasks?keyActivity=${encodeURIComponent(selectedKeyActivity)}`)
   }

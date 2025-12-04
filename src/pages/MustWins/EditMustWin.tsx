@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useYear } from '@/contexts/YearContext'
+import { loadFromYearStorage, saveToYearStorage, STORAGE_KEYS } from '@/utils/storageHelper'
 
 interface Pillar {
   id: number
@@ -22,16 +24,13 @@ interface MustWin {
   assignedPillars: string[]
 }
 
-const PILLARS_STORAGE_KEY = 'strategy-pillars-assignments'
-const MUST_WINS_STORAGE_KEY = 'must-wins-data'
-
 const EditMustWin = () => {
   const navigate = useNavigate()
+  const { selectedYear } = useYear()
   const { id } = useParams()
   const [strategyPillars, setStrategyPillars] = useState<Pillar[]>([])
   const [loading, setLoading] = useState(true)
   const [formData, setFormData] = useState({
-    year: 2026,
     title: '',
     description: '',
     assignedPillars: [] as string[],
@@ -42,22 +41,22 @@ const EditMustWin = () => {
   const [ownerInput, setOwnerInput] = useState('')
 
   useEffect(() => {
-    // Load pillars from localStorage
-    const storedPillars = localStorage.getItem(PILLARS_STORAGE_KEY)
+    // Load pillars from year-aware storage
+    const storedPillars = loadFromYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, selectedYear)
     if (storedPillars) {
       try {
-        const pillars = JSON.parse(storedPillars)
+        const pillars = Array.isArray(storedPillars) ? storedPillars : []
         setStrategyPillars(pillars)
       } catch (e) {
         console.error('Failed to parse stored pillars:', e)
       }
     }
 
-    // Load existing Must-Win data from localStorage
-    const storedWins = localStorage.getItem(MUST_WINS_STORAGE_KEY)
+    // Load existing Must-Win data from year-aware storage
+    const storedWins = loadFromYearStorage(STORAGE_KEYS.MUST_WINS, selectedYear)
     if (storedWins) {
       try {
-        const mustWins: MustWin[] = JSON.parse(storedWins)
+        const mustWins: MustWin[] = Array.isArray(storedWins) ? storedWins : []
         const mustWin = mustWins.find(win => win.id === Number(id))
         
         if (mustWin) {
@@ -76,7 +75,7 @@ const EditMustWin = () => {
       }
     }
     setLoading(false)
-  }, [id])
+  }, [id, selectedYear])
 
   const handlePillarToggle = (pillar: string) => {
     setFormData(prev => ({
@@ -90,11 +89,11 @@ const EditMustWin = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Load and update must-wins in localStorage
-    const storedWins = localStorage.getItem(MUST_WINS_STORAGE_KEY)
+    // Load and update must-wins in year-aware storage
+    const storedWins = loadFromYearStorage(STORAGE_KEYS.MUST_WINS, selectedYear)
     if (storedWins) {
       try {
-        const mustWins: MustWin[] = JSON.parse(storedWins)
+        const mustWins: MustWin[] = Array.isArray(storedWins) ? storedWins : []
         
         // Find the original win to check for pillar changes
         const originalWin = mustWins.find(win => win.id === Number(id))
@@ -115,12 +114,12 @@ const EditMustWin = () => {
             : win
         )
         
-        localStorage.setItem(MUST_WINS_STORAGE_KEY, JSON.stringify(updatedMustWins))
+        saveToYearStorage(STORAGE_KEYS.MUST_WINS, updatedMustWins, selectedYear)
         
         // Update pillars' assignedWins arrays if pillar assignments changed
-        const storedPillars = localStorage.getItem(PILLARS_STORAGE_KEY)
+        const storedPillars = loadFromYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, selectedYear)
         if (storedPillars) {
-          const pillars: Pillar[] = JSON.parse(storedPillars)
+          const pillars: Pillar[] = Array.isArray(storedPillars) ? storedPillars : []
           
           const updatedPillars = pillars.map(pillar => {
             const wasAssigned = originalPillars.includes(pillar.title)
@@ -142,7 +141,7 @@ const EditMustWin = () => {
             return pillar
           })
           
-          localStorage.setItem(PILLARS_STORAGE_KEY, JSON.stringify(updatedPillars))
+          saveToYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, updatedPillars, selectedYear)
         }
         
         console.log('Updated Must-Win:', id)
@@ -178,28 +177,6 @@ const EditMustWin = () => {
           <p className="text-sm text-gray-600 mb-6">Update your Must-win details</p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Year */}
-            <div>
-              <label htmlFor="year" className="block text-sm font-medium text-gray-700 mb-2">
-                Year
-              </label>
-              <select
-                id="year"
-                value={formData.year}
-                onChange={(e) => setFormData({ ...formData, year: Number(e.target.value) })}
-                className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none bg-white bg-no-repeat bg-right cursor-pointer"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
-                  backgroundPosition: 'right 0.75rem center',
-                  backgroundSize: '1.25rem'
-                }}
-              >
-                <option value={2026}>2026</option>
-                <option value={2027}>2027</option>
-                <option value={2028}>2028</option>
-              </select>
-            </div>
-
             {/* Win Title */}
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">

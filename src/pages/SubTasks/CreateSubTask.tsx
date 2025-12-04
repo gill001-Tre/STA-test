@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useYear } from '@/contexts/YearContext'
+import { loadFromYearStorage, saveToYearStorage, STORAGE_KEYS } from '@/utils/storageHelper'
 
 const CreateSubTask = () => {
   const navigate = useNavigate()
+  const { selectedYear } = useYear()
   const [searchParams] = useSearchParams()
   const keyActivityFromUrl = searchParams.get('keyActivity') || 'Key Activity 1'
   
@@ -29,14 +32,14 @@ const CreateSubTask = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Load existing sub-tasks from localStorage
-    const stored = localStorage.getItem('sub-tasks-data')
+    // Load existing sub-tasks from year-aware storage
+    const stored = loadFromYearStorage(STORAGE_KEYS.SUB_TASKS, selectedYear)
     let subTasks = []
     let maxId = 0
     
     if (stored) {
       try {
-        subTasks = JSON.parse(stored)
+        subTasks = stored
         maxId = Math.max(...subTasks.map((t: any) => t.id), 0)
       } catch (e) {
         console.error('Failed to parse sub-tasks:', e)
@@ -55,9 +58,9 @@ const CreateSubTask = () => {
       keyActivity: formData.keyActivity
     }
     
-    // Save to localStorage
+    // Save to year-aware storage
     subTasks.push(newSubTask)
-    localStorage.setItem('sub-tasks-data', JSON.stringify(subTasks))
+    saveToYearStorage(STORAGE_KEYS.SUB_TASKS, subTasks, selectedYear)
     
     console.log('Sub-task created:', newSubTask)
     navigate(`/sub-tasks?keyActivity=${encodeURIComponent(keyActivityFromUrl)}`)

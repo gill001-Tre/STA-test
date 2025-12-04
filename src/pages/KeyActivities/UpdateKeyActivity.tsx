@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useYear } from '@/contexts/YearContext'
+import { loadFromYearStorage, saveToYearStorage, STORAGE_KEYS } from '@/utils/storageHelper'
 
 interface KPI {
   name: string
@@ -8,6 +10,7 @@ interface KPI {
 
 const UpdateKeyActivity = () => {
   const navigate = useNavigate()
+  const { selectedYear } = useYear()
   const [searchParams] = useSearchParams()
   const activityId = searchParams.get('id')
   const winId = searchParams.get('winId') || '1' // Default to Win 1 if not provided
@@ -32,23 +35,23 @@ const UpdateKeyActivity = () => {
 
   useEffect(() => {
     // Load must-wins
-    const storedWins = localStorage.getItem('must-wins-data')
+    const storedWins = loadFromYearStorage(STORAGE_KEYS.MUST_WINS, selectedYear)
     if (storedWins) {
       try {
-        setAllMustWins(JSON.parse(storedWins))
+        setAllMustWins(storedWins)
       } catch (e) {
         console.error('Failed to parse must-wins:', e)
       }
     }
   }, [])
 
-  // Load existing activity data from localStorage
+  // Load existing activity data from year-aware storage
   useEffect(() => {
     if (activityId) {
-      const stored = localStorage.getItem('key-activities-data')
+      const stored = loadFromYearStorage(STORAGE_KEYS.KEY_ACTIVITIES, selectedYear)
       if (stored) {
         try {
-          const activities = JSON.parse(stored)
+          const activities = stored
           const activity = activities.find((a: any) => a.id === Number(activityId))
           
           if (activity) {
@@ -78,7 +81,7 @@ const UpdateKeyActivity = () => {
         }
       }
     }
-  }, [activityId])
+  }, [activityId, selectedYear])
 
   const mustWins = allMustWins.map((win: any) => ({
     id: win.id,
@@ -124,11 +127,11 @@ const UpdateKeyActivity = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Load existing activities from localStorage
-    const stored = localStorage.getItem('key-activities-data')
+    // Load existing activities from year-aware storage
+    const stored = loadFromYearStorage(STORAGE_KEYS.KEY_ACTIVITIES, selectedYear)
     if (stored && activityId) {
       try {
-        const activities = JSON.parse(stored)
+        const activities = stored
         const activityIndex = activities.findIndex((a: any) => a.id === Number(activityId))
         
         if (activityIndex !== -1) {
@@ -145,8 +148,8 @@ const UpdateKeyActivity = () => {
             stretchKPIs: stretchKPIs.filter(kpi => kpi.name || kpi.range),
           }
           
-          // Save back to localStorage
-          localStorage.setItem('key-activities-data', JSON.stringify(activities))
+          // Save back to year-aware storage
+          saveToYearStorage(STORAGE_KEYS.KEY_ACTIVITIES, activities, selectedYear)
           console.log('Updated key activity:', activities[activityIndex])
           navigate(`/key-activities?winId=${winId}`)
         }

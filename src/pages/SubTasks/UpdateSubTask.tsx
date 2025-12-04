@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useYear } from '@/contexts/YearContext'
+import { loadFromYearStorage, saveToYearStorage, STORAGE_KEYS } from '@/utils/storageHelper'
 
 const UpdateSubTask = () => {
   const navigate = useNavigate()
+  const { selectedYear } = useYear()
   const [searchParams] = useSearchParams()
   const subTaskId = searchParams.get('id')
   const keyActivityFromUrl = searchParams.get('keyActivity') || 'Key Activity 1'
@@ -25,10 +28,10 @@ const UpdateSubTask = () => {
   // Load existing sub-task data
   useEffect(() => {
     if (subTaskId) {
-      const stored = localStorage.getItem('sub-tasks-data')
+      const stored = loadFromYearStorage(STORAGE_KEYS.SUB_TASKS, selectedYear)
       if (stored) {
         try {
-          const subTasks = JSON.parse(stored)
+          const subTasks = stored
           const subTask = subTasks.find((task: any) => task.id === Number(subTaskId))
           
           if (subTask) {
@@ -45,7 +48,7 @@ const UpdateSubTask = () => {
         }
       }
     }
-  }, [subTaskId])
+  }, [subTaskId, selectedYear])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -55,11 +58,11 @@ const UpdateSubTask = () => {
       return
     }
 
-    // Load existing sub-tasks from localStorage
-    const stored = localStorage.getItem('sub-tasks-data')
+    // Load existing sub-tasks from year-aware storage
+    const stored = loadFromYearStorage(STORAGE_KEYS.SUB_TASKS, selectedYear)
     if (stored) {
       try {
-        const subTasks = JSON.parse(stored)
+        const subTasks = stored
         const taskIndex = subTasks.findIndex((task: any) => task.id === Number(subTaskId))
         
         if (taskIndex !== -1) {
@@ -73,8 +76,8 @@ const UpdateSubTask = () => {
             deadline: formData.deadline,
           }
           
-          // Save back to localStorage
-          localStorage.setItem('sub-tasks-data', JSON.stringify(subTasks))
+          // Save back to year-aware storage
+          saveToYearStorage(STORAGE_KEYS.SUB_TASKS, subTasks, selectedYear)
           console.log('Updated sub-task:', subTasks[taskIndex])
         }
       } catch (e) {

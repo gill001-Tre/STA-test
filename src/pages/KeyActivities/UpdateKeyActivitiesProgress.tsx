@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useYear } from '@/contexts/YearContext'
+import { loadFromYearStorage, saveToYearStorage, STORAGE_KEYS } from '@/utils/storageHelper'
 
 interface KeyActivity {
   id: number
@@ -16,6 +18,7 @@ const MUST_WINS_STORAGE_KEY = 'must-wins-data'
 
 const UpdateKeyActivitiesProgress = () => {
   const navigate = useNavigate()
+  const { selectedYear } = useYear()
   const [searchParams] = useSearchParams()
   const urlWinId = searchParams.get('winId')
   
@@ -26,18 +29,17 @@ const UpdateKeyActivitiesProgress = () => {
 
   // Load must-wins for dropdown
   useEffect(() => {
-    const mustWinsStored = localStorage.getItem(MUST_WINS_STORAGE_KEY)
+    const mustWinsStored = loadFromYearStorage(STORAGE_KEYS.MUST_WINS, selectedYear)
     if (mustWinsStored) {
-      const wins = JSON.parse(mustWinsStored)
-      setMustWins(wins)
+      setMustWins(mustWinsStored)
     }
-  }, [])
+  }, [selectedYear])
 
   // Load key activities whenever selectedWinId changes
   useEffect(() => {
-    const stored = localStorage.getItem(KEY_ACTIVITIES_STORAGE_KEY)
+    const stored = loadFromYearStorage(STORAGE_KEYS.KEY_ACTIVITIES, selectedYear)
     if (stored) {
-      const allActivities = JSON.parse(stored)
+      const allActivities = stored
       // Filter by selected win
       const filteredActivities = allActivities.filter(
         (activity: KeyActivity) => Number(activity.assignedMustWin) === Number(selectedWinId)
@@ -46,15 +48,15 @@ const UpdateKeyActivitiesProgress = () => {
     }
 
     // Get must-win title
-    const mustWinsStored = localStorage.getItem(MUST_WINS_STORAGE_KEY)
+    const mustWinsStored = loadFromYearStorage(STORAGE_KEYS.MUST_WINS, selectedYear)
     if (mustWinsStored) {
-      const wins = JSON.parse(mustWinsStored)
+      const wins = mustWinsStored
       const win = wins.find((w: any) => w.id === Number(selectedWinId))
       if (win) {
         setMustWinTitle(win.title)
       }
     }
-  }, [selectedWinId])
+  }, [selectedWinId, selectedYear])
 
   const handleProgressChange = (id: number, newProgress: number) => {
     setKeyActivities(prev => prev.map(activity => {
@@ -87,9 +89,9 @@ const UpdateKeyActivitiesProgress = () => {
 
   const handleSaveChanges = () => {
     // Load all activities
-    const stored = localStorage.getItem(KEY_ACTIVITIES_STORAGE_KEY)
+    const stored = loadFromYearStorage(STORAGE_KEYS.KEY_ACTIVITIES, selectedYear)
     if (stored) {
-      const allActivities = JSON.parse(stored)
+      const allActivities = stored
       // Update activities for this win
       const updatedActivities = allActivities.map((activity: KeyActivity) => {
         const updatedActivity = keyActivities.find(ka => ka.id === activity.id)
@@ -98,8 +100,8 @@ const UpdateKeyActivitiesProgress = () => {
         }
         return activity
       })
-      localStorage.setItem(KEY_ACTIVITIES_STORAGE_KEY, JSON.stringify(updatedActivities))
-      console.log('Key Activity progress changes saved to localStorage:', updatedActivities)
+      saveToYearStorage(STORAGE_KEYS.KEY_ACTIVITIES, updatedActivities, selectedYear)
+      console.log('Key Activity progress changes saved to year-aware storage:', updatedActivities)
     }
     navigate(`/key-activities?winId=${selectedWinId}`)
   }

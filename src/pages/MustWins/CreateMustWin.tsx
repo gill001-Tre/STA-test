@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useYear } from '@/contexts/YearContext'
+import { loadFromYearStorage, saveToYearStorage, STORAGE_KEYS } from '@/utils/storageHelper'
 
 interface Pillar {
   id: number
@@ -22,14 +24,11 @@ interface MustWin {
   assignedPillars: string[]
 }
 
-const PILLARS_STORAGE_KEY = 'strategy-pillars-assignments'
-const MUST_WINS_STORAGE_KEY = 'must-wins-data'
-
 const CreateMustWin = () => {
   const navigate = useNavigate()
+  const { selectedYear } = useYear()
   const [strategyPillars, setStrategyPillars] = useState<Pillar[]>([])
   const [formData, setFormData] = useState({
-    year: 2026,
     title: '',
     description: '',
     assignedPillars: [] as string[],
@@ -39,18 +38,18 @@ const CreateMustWin = () => {
   })
   const [ownerInput, setOwnerInput] = useState('')
 
-  // Load pillars from localStorage
+  // Load pillars from year-aware storage
   useEffect(() => {
-    const stored = localStorage.getItem(PILLARS_STORAGE_KEY)
+    const stored = loadFromYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, selectedYear)
     if (stored) {
       try {
-        const pillars = JSON.parse(stored)
+        const pillars = Array.isArray(stored) ? stored : []
         setStrategyPillars(pillars)
       } catch (e) {
         console.error('Failed to parse stored pillars:', e)
       }
     }
-  }, [])
+  }, [selectedYear])
 
   const handlePillarToggle = (pillar: string) => {
     setFormData(prev => ({
@@ -64,12 +63,12 @@ const CreateMustWin = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Load existing must-wins from localStorage
-    const stored = localStorage.getItem(MUST_WINS_STORAGE_KEY)
+    // Load existing must-wins from year-aware storage
+    const stored = loadFromYearStorage(STORAGE_KEYS.MUST_WINS, selectedYear)
     let existingMustWins: MustWin[] = []
     if (stored) {
       try {
-        existingMustWins = JSON.parse(stored)
+        existingMustWins = Array.isArray(stored) ? stored : []
       } catch (e) {
         console.error('Failed to parse stored must-wins:', e)
       }
@@ -93,16 +92,16 @@ const CreateMustWin = () => {
       assignedPillars: formData.assignedPillars
     }
 
-    // Add new must-win to array and save
+    // Add new must-win to array and save to year-aware storage
     const updatedMustWins = [...existingMustWins, newMustWin]
-    localStorage.setItem(MUST_WINS_STORAGE_KEY, JSON.stringify(updatedMustWins))
+    saveToYearStorage(STORAGE_KEYS.MUST_WINS, updatedMustWins, selectedYear)
     
     // Update pillars' assignedWins arrays
     if (formData.assignedPillars.length > 0) {
-      const storedPillars = localStorage.getItem(PILLARS_STORAGE_KEY)
+      const storedPillars = loadFromYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, selectedYear)
       if (storedPillars) {
         try {
-          const pillars: Pillar[] = JSON.parse(storedPillars)
+          const pillars: Pillar[] = Array.isArray(storedPillars) ? storedPillars : []
           const updatedPillars = pillars.map(pillar => {
             if (formData.assignedPillars.includes(pillar.title)) {
               // Add the new must-win ID to this pillar's assignedWins
@@ -113,7 +112,7 @@ const CreateMustWin = () => {
             }
             return pillar
           })
-          localStorage.setItem(PILLARS_STORAGE_KEY, JSON.stringify(updatedPillars))
+          saveToYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, updatedPillars, selectedYear)
           console.log('Updated pillars with new win assignment:', updatedPillars)
         } catch (e) {
           console.error('Failed to update pillars:', e)

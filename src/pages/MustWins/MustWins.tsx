@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useYear } from '@/contexts/YearContext'
+import { loadFromYearStorage, saveToYearStorage, STORAGE_KEYS } from '@/utils/storageHelper'
 
 interface MustWin {
   id: number
@@ -18,17 +20,18 @@ const STORAGE_KEY = 'must-wins-data'
 
 const MustWins = () => {
   const navigate = useNavigate()
+  const { selectedYear } = useYear()
   const [mustWins, setMustWins] = useState<MustWin[]>([])
 
-  // Load progress data from localStorage on mount
+  // Load progress data from year-aware storage on mount
   useEffect(() => {
     loadMustWins()
-  }, [])
+  }, [selectedYear])
 
   const loadMustWins = () => {
-    const stored = localStorage.getItem(STORAGE_KEY)
+    const stored = loadFromYearStorage(STORAGE_KEYS.MUST_WINS, selectedYear)
     if (stored) {
-      const storedData = JSON.parse(stored)
+      const storedData = stored
       // Map data to match MustWin interface
       const mappedData = storedData.map((win: any) => ({
         id: win.id,
@@ -48,11 +51,10 @@ const MustWins = () => {
 
   const handleDeleteWin = (winId: number) => {
     if (window.confirm('Are you sure you want to delete this must-win? This action cannot be undone.')) {
-      const stored = localStorage.getItem(STORAGE_KEY)
+      const stored = loadFromYearStorage(STORAGE_KEYS.MUST_WINS, selectedYear)
       if (stored) {
-        const storedData = JSON.parse(stored)
-        const updatedData = storedData.filter((win: any) => win.id !== winId)
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedData))
+        const updatedData = stored.filter((win: any) => win.id !== winId)
+        saveToYearStorage(STORAGE_KEYS.MUST_WINS, updatedData, selectedYear)
         
         // Also remove this win from any pillars' assignedWins arrays
         const pillarsStored = localStorage.getItem('strategy-pillars-assignments')

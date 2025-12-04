@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useYear } from '@/contexts/YearContext'
+import { loadFromYearStorage, saveToYearStorage, STORAGE_KEYS } from '@/utils/storageHelper'
 
 interface Pillar {
   id: number
@@ -10,32 +12,29 @@ interface Pillar {
   assignedWins: number[]
 }
 
-const STORAGE_KEY = 'strategy-pillars-assignments'
-
 const EditStrategyPillar = () => {
   const navigate = useNavigate()
+  const { selectedYear } = useYear()
   const { id } = useParams()
   const [loading, setLoading] = useState(true)
   const [formData, setFormData] = useState({
-    year: 2026,
     title: '',
     description: ''
   })
 
   useEffect(() => {
-    // Load existing pillar data from localStorage
-    const stored = localStorage.getItem(STORAGE_KEY)
+    // Load existing pillar data from year-aware storage
+    const stored = loadFromYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, selectedYear)
     
     if (stored) {
       try {
-        const pillars: Pillar[] = JSON.parse(stored)
+        const pillars: Pillar[] = Array.isArray(stored) ? stored : []
         const pillar = pillars.find(p => p.id === Number(id))
         
         if (pillar) {
           // Convert objectives array to newline-separated text
           const objectivesText = pillar.objectives.join('\n')
           setFormData({
-            year: 2026,
             title: pillar.title,
             description: objectivesText
           })
@@ -45,17 +44,17 @@ const EditStrategyPillar = () => {
       }
     }
     setLoading(false)
-  }, [id])
+  }, [id, selectedYear])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Load pillars from localStorage
-    const stored = localStorage.getItem(STORAGE_KEY)
+    // Load pillars from year-aware storage
+    const stored = loadFromYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, selectedYear)
     
     if (stored) {
       try {
-        const pillars: Pillar[] = JSON.parse(stored)
+        const pillars: Pillar[] = Array.isArray(stored) ? stored : []
         
         // Split description into objectives (one per line)
         const objectives = formData.description
@@ -75,7 +74,7 @@ const EditStrategyPillar = () => {
             : pillar
         )
 
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPillars))
+        saveToYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, updatedPillars, selectedYear)
         console.log('Updated Strategy Pillar:', id)
         navigate('/strategy-pillars')
       } catch (e) {

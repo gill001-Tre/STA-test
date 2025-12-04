@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useYear } from '@/contexts/YearContext'
+import { loadFromYearStorage, saveToYearStorage, STORAGE_KEYS } from '@/utils/storageHelper'
 
 interface Pillar {
   id: number
@@ -18,34 +20,46 @@ interface MustWin {
   isAssigned: boolean
 }
 
-const STORAGE_KEY = 'strategy-pillars-assignments'
-
-const initialPillars: Pillar[] = []
-
 const StrategyPillars = () => {
   const navigate = useNavigate()
+  const { selectedYear } = useYear()
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [selectedPillarId, setSelectedPillarId] = useState<number | null>(null)
   const [selectedWins, setSelectedWins] = useState<number[]>([])
   
-  // Load pillars from localStorage or use initial data
+  // Load pillars from year-aware storage
   const [pillars, setPillars] = useState<Pillar[]>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
+    const stored = loadFromYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, selectedYear)
     if (stored) {
       try {
-        return JSON.parse(stored)
+        return Array.isArray(stored) ? stored : []
       } catch (e) {
         console.error('Failed to parse stored pillars:', e)
-        return initialPillars
+        return []
       }
     }
-    return initialPillars
+    return []
   })
 
-  // Save to localStorage whenever pillars change
+  // Save to year-aware storage whenever pillars change
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(pillars))
-  }, [pillars])
+    saveToYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, pillars, selectedYear)
+  }, [pillars, selectedYear])
+
+  // Reload pillars when year changes
+  useEffect(() => {
+    const stored = loadFromYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, selectedYear)
+    if (stored) {
+      try {
+        setPillars(Array.isArray(stored) ? stored : [])
+      } catch (e) {
+        console.error('Failed to parse stored pillars:', e)
+        setPillars([])
+      }
+    } else {
+      setPillars([])
+    }
+  }, [selectedYear])
 
   // Mock Must-Wins data - matching dashboard data
   const mockMustWins: MustWin[] = []

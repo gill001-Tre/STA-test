@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useYear } from '@/contexts/YearContext'
+import { loadFromYearStorage, saveToYearStorage, STORAGE_KEYS } from '@/utils/storageHelper'
 
 const STORAGE_KEY = 'sub-tasks-data'
 
@@ -16,17 +18,18 @@ interface SubTask {
 
 const SubTasks = () => {
   const navigate = useNavigate()
+  const { selectedYear } = useYear()
   const [searchParams] = useSearchParams()
   const [selectedFilter, setSelectedFilter] = useState<string>('Key Activity 1')
   const [allSubTasks, setAllSubTasks] = useState<SubTask[]>([])
 
-  // Load sub-tasks from localStorage
+  // Load sub-tasks from year-aware storage
   useEffect(() => {
     const loadSubTasks = () => {
-      const stored = localStorage.getItem(STORAGE_KEY)
+      const stored = loadFromYearStorage(STORAGE_KEYS.SUB_TASKS, selectedYear)
       if (stored) {
         try {
-          const parsed = JSON.parse(stored)
+          const parsed = stored
           setAllSubTasks(parsed)
         } catch (e) {
           console.error('Failed to parse sub-tasks:', e)
@@ -34,7 +37,7 @@ const SubTasks = () => {
       }
     }
     loadSubTasks()
-  }, [])
+  }, [selectedYear])
 
   // Sync filter from URL params
   useEffect(() => {
@@ -65,7 +68,7 @@ const SubTasks = () => {
   const handleDeleteTask = (taskId: number) => {
     const updatedTasks = allSubTasks.filter(task => task.id !== taskId)
     setAllSubTasks(updatedTasks)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedTasks))
+    saveToYearStorage(STORAGE_KEYS.SUB_TASKS, updatedTasks, selectedYear)
   }
 
   return (
