@@ -2,15 +2,20 @@ import { Link, useLocation } from 'react-router-dom'
 // import { useMsal } from '@azure/msal-react'
 import { useState, useRef, useEffect } from 'react'
 import logo from '../../assets/logo.png'
+import { useYear } from '@/contexts/YearContext'
+import { useAuth, getTestUsers } from '@/contexts/AuthContext'
 
 const Header = () => {
   const location = useLocation()
+  const { selectedYear, setSelectedYear, availableYears } = useYear()
+  const { user, switchUser } = useAuth()
   // const { instance, accounts } = useMsal()
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false)
   const [isPillarsDropdownOpen, setIsPillarsDropdownOpen] = useState(false)
   const [isMustWinsDropdownOpen, setIsMustWinsDropdownOpen] = useState(false)
   const [isKeyActivitiesDropdownOpen, setIsKeyActivitiesDropdownOpen] = useState(false)
   const [isSubTasksDropdownOpen, setIsSubTasksDropdownOpen] = useState(false)
+  const userDropdownRef = useRef<HTMLDivElement>(null)
   const pillarsDropdownRef = useRef<HTMLDivElement>(null)
   const mustWinsDropdownRef = useRef<HTMLDivElement>(null)
   const keyActivitiesDropdownRef = useRef<HTMLDivElement>(null)
@@ -19,6 +24,9 @@ const Header = () => {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target as Node)) {
+        setIsUserDropdownOpen(false)
+      }
       if (pillarsDropdownRef.current && !pillarsDropdownRef.current.contains(event.target as Node)) {
         setIsPillarsDropdownOpen(false)
       }
@@ -64,12 +72,14 @@ const Header = () => {
     { name: 'Update Sub-task Progress', path: '/sub-tasks/progress' },
   ]
 
+    const years = [2026, 2027, 2028]
+
   const handleLogout = () => {
     // instance.logoutPopup()
     console.log('Logout - will be implemented with SSO')
   }
 
-  const years = [2026, 2027, 2028]
+  const testUsers = getTestUsers()
 
   return (
     <header className="bg-primary text-white">
@@ -262,24 +272,63 @@ const Header = () => {
                 backgroundSize: '1.25rem'
               }}
             >
-              {years.map((year) => (
+              {availableYears.map((year) => (
                 <option key={year} value={year}>
                   {year}
                 </option>
               ))}
             </select>
 
-            {/* User Profile */}
-            <div className="relative">
+            {/* User Profile Dropdown */}
+            <div className="relative" ref={userDropdownRef}>
               <button
-                onClick={handleLogout}
-                className="w-9 h-9 bg-white rounded-full flex items-center justify-center text-primary hover:bg-gray-100 transition-colors"
-                title="User Profile"
+                onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                className="w-9 h-9 bg-white rounded-full flex items-center justify-center text-primary hover:bg-gray-100 transition-colors text-xs font-semibold"
+                title={user?.name || 'User'}
               >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                </svg>
+                {user?.avatar || 'US'}
               </button>
+              
+              {/* User Dropdown Menu */}
+              {isUserDropdownOpen && (
+                <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 z-50">
+                  <div className="px-4 py-2 border-b border-gray-200">
+                    <p className="font-semibold text-gray-900">{user?.name}</p>
+                    <p className="text-sm text-gray-600">{user?.role}</p>
+                    <p className="text-xs text-gray-500">{user?.email}</p>
+                  </div>
+                  
+                  <div className="py-1">
+                    <p className="px-4 py-2 text-xs font-semibold text-gray-700 uppercase">Switch User</p>
+                    {testUsers.map((testUser) => (
+                      <button
+                        key={testUser.id}
+                        onClick={() => {
+                          switchUser(testUser)
+                          setIsUserDropdownOpen(false)
+                        }}
+                        className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                          user?.id === testUser.id
+                            ? 'bg-orange-100 text-primary font-semibold'
+                            : 'text-gray-800 hover:bg-orange-50 hover:text-primary'
+                        }`}
+                      >
+                        <span className="font-medium">{testUser.name}</span>
+                        <p className="text-xs text-gray-600">{testUser.role}</p>
+                      </button>
+                    ))}
+                  </div>
+                  
+                  <div className="py-1 border-t border-gray-200">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

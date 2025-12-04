@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import StatCard from '@/components/UI/StatCard'
 import ProgressBar from '@/components/UI/ProgressBar'
 import StatusBadge from '@/components/UI/StatusBadge'
+import { useYear } from '@/contexts/YearContext'
+import { loadFromYearStorage, STORAGE_KEYS } from '@/utils/storageHelper'
 
 const STORAGE_KEY = 'strategy-pillars-assignments'
 const MUST_WINS_STORAGE_KEY = 'must-wins-data'
@@ -88,13 +90,14 @@ const mockData = {
 }
 
 const Dashboard = () => {
+  const { selectedYear } = useYear()
   const [selectedWin, setSelectedWin] = useState('1')
   const [mustWins, setMustWins] = useState<MustWin[]>(mockData.mustWins)
   const [keyActivities, setKeyActivities] = useState<KeyActivity[]>(mockData.keyActivities)
   const [strategyPillarsWithWins, setStrategyPillarsWithWins] = useState<any[]>([])
   const [totalSubTasksCount, setTotalSubTasksCount] = useState(0)
 
-  // Load must-win and key activity progress from localStorage on mount
+  // Load must-win and key activity progress from year-aware localStorage
   useEffect(() => {
     // Clear old data on mount for testing - COMMENT OUT AFTER INITIAL TESTING
     // localStorage.removeItem('strategy-pillars-assignments')
@@ -103,16 +106,27 @@ const Dashboard = () => {
     // localStorage.removeItem('sub-tasks-data')
     
     const loadData = () => {
-      // Load pillars with win counts
-      const pillars = getPillarsWithWinCount()
-      setStrategyPillarsWithWins(pillars)
+      // Load pillars with win counts from year-aware storage
+      const storedPillars = loadFromYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, selectedYear)
+      if (storedPillars) {
+        const pillars = Array.isArray(storedPillars) ? storedPillars : []
+        setStrategyPillarsWithWins(pillars.map((pillar: any) => ({
+          id: pillar.id,
+          number: pillar.number,
+          title: pillar.title,
+          winsCount: pillar.assignedWins?.length || 0,
+          assignedWins: pillar.assignedWins || []
+        })))
+      } else {
+        setStrategyPillarsWithWins([])
+      }
       
-      // Load sub-tasks count from localStorage
-      const storedSubTasks = localStorage.getItem('sub-tasks-data')
+      // Load sub-tasks count from year-aware localStorage
+      const storedSubTasks = loadFromYearStorage(STORAGE_KEYS.SUB_TASKS, selectedYear)
       if (storedSubTasks) {
         try {
-          const subTasks = JSON.parse(storedSubTasks)
-          setTotalSubTasksCount(Array.isArray(subTasks) ? subTasks.length : 0)
+          const subTasks = Array.isArray(storedSubTasks) ? storedSubTasks : []
+          setTotalSubTasksCount(subTasks.length)
         } catch (e) {
           console.error('Failed to parse sub-tasks:', e)
           setTotalSubTasksCount(0)
@@ -122,11 +136,11 @@ const Dashboard = () => {
       }
       
       // Load key activities to count them per win
-      const storedActivities = localStorage.getItem(KEY_ACTIVITIES_STORAGE_KEY)
+      const storedActivities = loadFromYearStorage(STORAGE_KEYS.KEY_ACTIVITIES, selectedYear)
       const activitiesByWin: { [key: number]: number } = {}
       if (storedActivities) {
         try {
-          const parsedActivities = JSON.parse(storedActivities)
+          const parsedActivities = Array.isArray(storedActivities) ? storedActivities : []
           parsedActivities.forEach((activity: any) => {
             const winId = Number(activity.assignedMustWin)
             if (winId) {
@@ -138,10 +152,10 @@ const Dashboard = () => {
         }
       }
       
-      const storedMustWins = localStorage.getItem(MUST_WINS_STORAGE_KEY)
+      const storedMustWins = loadFromYearStorage(STORAGE_KEYS.MUST_WINS, selectedYear)
       if (storedMustWins) {
         try {
-          const parsedMustWins = JSON.parse(storedMustWins)
+          const parsedMustWins = Array.isArray(storedMustWins) ? storedMustWins : []
           // Map to dashboard format
           const formattedMustWins = parsedMustWins.map((win: any) => ({
             id: win.id,
@@ -159,13 +173,16 @@ const Dashboard = () => {
           setMustWins(formattedMustWins)
         } catch (e) {
           console.error('Failed to parse must-wins:', e)
+          setMustWins([])
         }
+      } else {
+        setMustWins([])
       }
       
-      // Load key activities from localStorage
+      // Load key activities from year-aware localStorage
       if (storedActivities) {
         try {
-          const parsedActivities = JSON.parse(storedActivities)
+          const parsedActivities = Array.isArray(storedActivities) ? storedActivities : []
           // Map to dashboard format
           const formattedActivities = parsedActivities.map((activity: any) => ({
             id: activity.id,
@@ -184,7 +201,10 @@ const Dashboard = () => {
           setKeyActivities(formattedActivities)
         } catch (e) {
           console.error('Failed to parse key activities:', e)
+          setKeyActivities([])
         }
+      } else {
+        setKeyActivities([])
       }
     }
 
@@ -202,14 +222,14 @@ const Dashboard = () => {
     return () => {
       window.removeEventListener('focus', handleFocus)
     }
-  }, [])
+  }, [selectedYear])
 
   // Helper function to count sub-tasks for a specific key activity
   const getSubTasksCountForActivity = (activity: any): number => {
     try {
-      const storedSubTasks = localStorage.getItem('sub-tasks-data')
+      const storedSubTasks = loadFromYearStorage(STORAGE_KEYS.SUB_TASKS, selectedYear)
       if (storedSubTasks) {
-        const subTasks = JSON.parse(storedSubTasks)
+        const subTasks = Array.isArray(storedSubTasks) ? storedSubTasks : []
         if (Array.isArray(subTasks)) {
           // Sub-tasks store the key activity as a string like "Key Activity 1" or the activity title
           // Match by either the key activity name or the activity title
