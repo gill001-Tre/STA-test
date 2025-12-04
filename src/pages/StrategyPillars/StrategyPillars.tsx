@@ -26,27 +26,9 @@ const StrategyPillars = () => {
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [selectedPillarId, setSelectedPillarId] = useState<number | null>(null)
   const [selectedWins, setSelectedWins] = useState<number[]>([])
-  
-  // Load pillars from year-aware storage
-  const [pillars, setPillars] = useState<Pillar[]>(() => {
-    const stored = loadFromYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, selectedYear)
-    if (stored) {
-      try {
-        return Array.isArray(stored) ? stored : []
-      } catch (e) {
-        console.error('Failed to parse stored pillars:', e)
-        return []
-      }
-    }
-    return []
-  })
+  const [pillars, setPillars] = useState<Pillar[]>([])
 
-  // Save to year-aware storage whenever pillars change
-  useEffect(() => {
-    saveToYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, pillars, selectedYear)
-  }, [pillars, selectedYear])
-
-  // Reload pillars when year changes
+  // Load pillars when year changes
   useEffect(() => {
     const stored = loadFromYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, selectedYear)
     if (stored) {
@@ -60,6 +42,11 @@ const StrategyPillars = () => {
       setPillars([])
     }
   }, [selectedYear])
+
+  // Save to year-aware storage whenever pillars change
+  useEffect(() => {
+    saveToYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, pillars, selectedYear)
+  }, [pillars, selectedYear])
 
   // Mock Must-Wins data - matching dashboard data
   const mockMustWins: MustWin[] = []
