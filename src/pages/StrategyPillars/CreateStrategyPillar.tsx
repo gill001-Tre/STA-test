@@ -23,8 +23,13 @@ const CreateStrategyPillar = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
+    console.log('=== CREATE PILLAR DEBUG ===')
+    console.log('Selected year:', selectedYear)
+    
     // Load existing pillars from year-aware storage
     const stored = loadFromYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, selectedYear)
+    console.log('Stored pillars:', stored)
+    
     let existingPillars: Pillar[] = []
     if (stored) {
       try {
@@ -57,19 +62,21 @@ const CreateStrategyPillar = () => {
 
     // Add new pillar to array and save to year-aware storage
     const updatedPillars = [...existingPillars, newPillar]
-    saveToYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, updatedPillars, selectedYear)
+    console.log('Updated pillars to save:', updatedPillars)
     
-    console.log(`Created pillar for year ${selectedYear}:`, newPillar)
+    saveToYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, updatedPillars, selectedYear)
+    console.log(`Saved ${updatedPillars.length} pillars for year ${selectedYear}`)
+    console.log('=== END DEBUG ===')
     
     // Navigate back to strategy pillars list
-    navigate('/strategy-pillars')
+    setTimeout(() => {
+      navigate('/strategy-pillars')
+    }, 100)
   }
 
   const handleCancel = () => {
     navigate('/strategy-pillars')
   }
-
-  const years = [2026, 2027, 2028]
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -88,31 +95,6 @@ const CreateStrategyPillar = () => {
           <p className="text-sm text-gray-500 mb-6">Add a new strategic pillar and assign to win/wins.</p>
 
           <form onSubmit={handleSubmit}>
-            {/* Year Field */}
-            <div className="mb-6">
-              <label htmlFor="year" className="block text-sm font-medium text-gray-900 mb-2">
-                Year
-              </label>
-              <select
-                id="year"
-                value={formData.year}
-                onChange={(e) => setFormData({ ...formData, year: Number(e.target.value) })}
-                className="w-full px-4 py-2.5 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors appearance-none bg-no-repeat bg-right"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
-                  backgroundPosition: 'right 0.75rem center',
-                  backgroundSize: '1.25rem'
-                }}
-                required
-              >
-                {years.map((year) => (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                ))}
-              </select>
-            </div>
-
             {/* Pillar Title Field */}
             <div className="mb-6">
               <label htmlFor="title" className="block text-sm font-medium text-gray-900 mb-2">

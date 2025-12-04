@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useYear } from '@/contexts/YearContext'
 import { loadFromYearStorage, saveToYearStorage, STORAGE_KEYS } from '@/utils/storageHelper'
 
@@ -22,18 +22,24 @@ interface MustWin {
 
 const StrategyPillars = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const { selectedYear } = useYear()
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [selectedPillarId, setSelectedPillarId] = useState<number | null>(null)
   const [selectedWins, setSelectedWins] = useState<number[]>([])
   const [pillars, setPillars] = useState<Pillar[]>([])
+  const [refreshKey, setRefreshKey] = useState(0)
 
   // Load pillars when year changes
   useEffect(() => {
+    console.log('Loading pillars for year:', selectedYear)
     const stored = loadFromYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, selectedYear)
+    console.log('Stored pillars:', stored)
     if (stored) {
       try {
-        setPillars(Array.isArray(stored) ? stored : [])
+        const pillarsArray = Array.isArray(stored) ? stored : []
+        console.log('Setting pillars:', pillarsArray)
+        setPillars(pillarsArray)
       } catch (e) {
         console.error('Failed to parse stored pillars:', e)
         setPillars([])
@@ -41,11 +47,50 @@ const StrategyPillars = () => {
     } else {
       setPillars([])
     }
+  }, [selectedYear, refreshKey])
+
+  // Reload data when navigating back to this page
+  useEffect(() => {
+    console.log('Page mounted/navigated - checking for updated data')
+    const stored = loadFromYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, selectedYear)
+    if (stored) {
+      try {
+        const pillarsArray = Array.isArray(stored) ? stored : []
+        console.log('Updated pillars from storage:', pillarsArray)
+        setPillars(pillarsArray)
+      } catch (e) {
+        console.error('Failed to parse stored pillars:', e)
+      }
+    }
+  }, [location.pathname])
+
+  // Listen for storage changes (from other tabs/windows or same tab)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      const key = `${STORAGE_KEYS.STRATEGY_PILLARS}-${selectedYear}`
+      if (e.key === key) {
+        console.log('Storage changed for pillars:', e.newValue)
+        if (e.newValue) {
+          try {
+            const pillarsArray = JSON.parse(e.newValue)
+            setPillars(Array.isArray(pillarsArray) ? pillarsArray : [])
+          } catch (error) {
+            console.error('Failed to parse new storage value:', error)
+          }
+        }
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
   }, [selectedYear])
 
   // Save to year-aware storage whenever pillars change
   useEffect(() => {
-    saveToYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, pillars, selectedYear)
+    if (pillars.length > 0) {
+      console.log('Saving pillars to storage:', pillars)
+      saveToYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, pillars, selectedYear)
+    }
   }, [pillars, selectedYear])
 
   // Mock Must-Wins data - matching dashboard data
