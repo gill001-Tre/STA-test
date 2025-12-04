@@ -62,15 +62,15 @@ const MustWins = () => {
         const updatedData = stored.filter((win: any) => win.id !== winId)
         saveToYearStorage(STORAGE_KEYS.MUST_WINS, updatedData, selectedYear)
         
-        // Also remove this win from any pillars' assignedWins arrays
-        const pillarsStored = localStorage.getItem('strategy-pillars-assignments')
+        // Also remove this win from any pillars' assignedWins arrays (using year-aware storage)
+        const pillarsStored = loadFromYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, selectedYear)
         if (pillarsStored) {
-          const pillars = JSON.parse(pillarsStored)
+          const pillars = Array.isArray(pillarsStored) ? pillarsStored : []
           const updatedPillars = pillars.map((pillar: any) => ({
             ...pillar,
-            assignedWins: pillar.assignedWins.filter((id: number) => id !== winId)
+            assignedWins: pillar.assignedWins?.filter((id: number) => id !== winId) || []
           }))
-          localStorage.setItem('strategy-pillars-assignments', JSON.stringify(updatedPillars))
+          saveToYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, updatedPillars, selectedYear)
         }
         
         loadMustWins()

@@ -62,17 +62,40 @@ const StrategyPillars = () => {
         console.error('Failed to parse stored pillars:', e)
       }
     }
-  }, [location.pathname])
+  }, [location.pathname, selectedYear])
+
+  // Force reload when window regains focus
+  useEffect(() => {
+    const handleFocus = () => {
+      console.log('Window focused - reloading pillars')
+      const stored = loadFromYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, selectedYear)
+      if (stored) {
+        try {
+          const pillarsArray = Array.isArray(stored) ? stored : []
+          setPillars(pillarsArray)
+        } catch (e) {
+          console.error('Failed to parse stored pillars:', e)
+        }
+      }
+    }
+    
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [selectedYear])
 
   // Listen for storage changes (from other tabs/windows or same tab)
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      const key = `${STORAGE_KEYS.STRATEGY_PILLARS}-${selectedYear}`
-      if (e.key === key) {
-        console.log('Storage changed for pillars:', e.newValue)
-        if (e.newValue) {
+      const pillarKey = `${STORAGE_KEYS.STRATEGY_PILLARS}-${selectedYear}`
+      const mustWinKey = `${STORAGE_KEYS.MUST_WINS}-${selectedYear}`
+      
+      // Reload pillars if either pillar data OR must-win data changes
+      if (e.key === pillarKey || e.key === mustWinKey) {
+        console.log('Storage changed - reloading pillars')
+        const stored = loadFromYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, selectedYear)
+        if (stored) {
           try {
-            const pillarsArray = JSON.parse(e.newValue)
+            const pillarsArray = JSON.parse(JSON.stringify(stored))
             setPillars(Array.isArray(pillarsArray) ? pillarsArray : [])
           } catch (error) {
             console.error('Failed to parse new storage value:', error)
