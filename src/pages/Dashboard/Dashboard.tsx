@@ -91,7 +91,7 @@ const mockData = {
 
 const Dashboard = () => {
   const { selectedYear } = useYear()
-  const [selectedWin, setSelectedWin] = useState('1')
+  const [selectedWin, setSelectedWin] = useState('')
   const [mustWins, setMustWins] = useState<MustWin[]>(mockData.mustWins)
   const [keyActivities, setKeyActivities] = useState<KeyActivity[]>(mockData.keyActivities)
   const [strategyPillarsWithWins, setStrategyPillarsWithWins] = useState<any[]>([])
@@ -430,16 +430,18 @@ const Dashboard = () => {
             onChange={(e) => setSelectedWin(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary"
           >
-            <option value="1">Win 1</option>
-            <option value="2">Win 2</option>
-            <option value="3">Win 3</option>
-            <option value="4">Win 4</option>
+            <option value="">All Wins</option>
+            {mustWins.map((win) => (
+              <option key={win.id} value={win.id}>
+                {win.title}
+              </option>
+            ))}
           </select>
         </div>
 
         <div className="space-y-3">
           {keyActivities
-            .filter(activity => Number(activity.assignedMustWin) === Number(selectedWin))
+            .filter(activity => !selectedWin || Number(activity.assignedMustWin) === Number(selectedWin))
             .map((activity) => {
             const progressPercentage = activity.totalTasks > 0 ? Math.round((activity.completedTasks / activity.totalTasks) * 100) : 0
             

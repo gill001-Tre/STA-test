@@ -26,6 +26,24 @@ const CreateKeyActivity = () => {
   const [baselineKPIs, setBaselineKPIs] = useState<KPI[]>([{ name: '', range: '' }, { name: '', range: '' }])
   const [targetKPIs, setTargetKPIs] = useState<KPI[]>([{ name: '', range: '' }, { name: '', range: '' }])
   const [stretchKPIs, setStretchKPIs] = useState<KPI[]>([{ name: '', range: '' }, { name: '', range: '' }])
+  const [mustWins, setMustWins] = useState<any[]>([])
+
+  // Load must-wins from year-aware storage
+  useEffect(() => {
+    const stored = loadFromYearStorage(STORAGE_KEYS.MUST_WINS, selectedYear)
+    if (stored) {
+      try {
+        const wins = Array.isArray(stored) ? stored : []
+        setMustWins(wins)
+        console.log('Loaded must-wins for year', selectedYear, ':', wins)
+      } catch (e) {
+        console.error('Failed to parse must-wins:', e)
+        setMustWins([])
+      }
+    } else {
+      setMustWins([])
+    }
+  }, [selectedYear])
 
   // Update assignedMustWin when winId changes
   useEffect(() => {
@@ -69,13 +87,6 @@ const CreateKeyActivity = () => {
   }
 
   const years = [2026, 2027, 2028]
-
-  const mustWins = [
-    { id: 1, title: 'IT Stack Modernization' },
-    { id: 2, title: 'Cybersecurity & Compliance' },
-    { id: 3, title: 'AI & Automation' },
-    { id: 4, title: '5G SA Readiness' },
-  ]
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
