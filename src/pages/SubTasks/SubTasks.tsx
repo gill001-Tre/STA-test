@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useYear } from '@/contexts/YearContext'
 import { loadFromYearStorage, saveToYearStorage, STORAGE_KEYS } from '@/utils/storageHelper'
 
@@ -18,6 +18,7 @@ interface SubTask {
 
 const SubTasks = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const { selectedYear } = useYear()
   const [searchParams] = useSearchParams()
   const [selectedFilter, setSelectedFilter] = useState<string>('Key Activity 1')
@@ -38,6 +39,22 @@ const SubTasks = () => {
     }
     loadSubTasks()
   }, [selectedYear])
+
+  // Reload when navigating back to this page
+  useEffect(() => {
+    const loadSubTasks = () => {
+      const stored = loadFromYearStorage(STORAGE_KEYS.SUB_TASKS, selectedYear)
+      if (stored) {
+        try {
+          const parsed = stored
+          setAllSubTasks(parsed)
+        } catch (e) {
+          console.error('Failed to parse sub-tasks:', e)
+        }
+      }
+    }
+    loadSubTasks()
+  }, [location.pathname])
 
   // Sync filter from URL params
   useEffect(() => {

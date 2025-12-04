@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useYear } from '@/contexts/YearContext'
 import { loadFromYearStorage, saveToYearStorage, STORAGE_KEYS } from '@/utils/storageHelper'
 
@@ -22,6 +22,7 @@ const STORAGE_KEY = 'key-activities-data'
 
 const KeyActivities = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const { selectedYear } = useYear()
   const [searchParams] = useSearchParams()
   const urlWinId = searchParams.get('winId')
@@ -34,6 +35,12 @@ const KeyActivities = () => {
     loadActivities()
     loadMustWins()
   }, [selectedYear])
+  
+  // Reload when navigating back to this page
+  useEffect(() => {
+    loadActivities()
+    loadMustWins()
+  }, [location.pathname])
   
   // Update selectedWinId when URL changes
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useYear } from '@/contexts/YearContext'
 import { loadFromYearStorage, saveToYearStorage, STORAGE_KEYS } from '@/utils/storageHelper'
 
@@ -20,6 +20,7 @@ const STORAGE_KEY = 'must-wins-data'
 
 const MustWins = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const { selectedYear } = useYear()
   const [mustWins, setMustWins] = useState<MustWin[]>([])
 
@@ -27,6 +28,11 @@ const MustWins = () => {
   useEffect(() => {
     loadMustWins()
   }, [selectedYear])
+
+  // Reload when navigating back to this page
+  useEffect(() => {
+    loadMustWins()
+  }, [location.pathname])
 
   const loadMustWins = () => {
     const stored = loadFromYearStorage(STORAGE_KEYS.MUST_WINS, selectedYear)
