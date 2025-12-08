@@ -28,7 +28,7 @@ const StrategyPillars = () => {
   const [selectedPillarId, setSelectedPillarId] = useState<number | null>(null)
   const [selectedWins, setSelectedWins] = useState<number[]>([])
   const [pillars, setPillars] = useState<Pillar[]>([])
-  const [refreshKey, setRefreshKey] = useState(0)
+  const [refreshKey] = useState(0)
 
   // Normalize pillar data to ensure all required fields exist
   const normalizePillar = (pillar: any): Pillar => ({
