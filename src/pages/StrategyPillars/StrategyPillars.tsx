@@ -28,6 +28,17 @@ const StrategyPillars = () => {
   const [selectedPillarId, setSelectedPillarId] = useState<number | null>(null)
   const [selectedWins, setSelectedWins] = useState<number[]>([])
   const [pillars, setPillars] = useState<Pillar[]>([])
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  // Normalize pillar data to ensure all required fields exist
+  const normalizePillar = (pillar: any): Pillar => ({
+    id: pillar.id || 0,
+    number: pillar.number || '',
+    title: pillar.title || '',
+    description: pillar.description || '',
+    objectives: Array.isArray(pillar.objectives) ? pillar.objectives : [],
+    assignedWins: Array.isArray(pillar.assignedWins) ? pillar.assignedWins : []
+  })
 
   // Load pillars when year changes
   useEffect(() => {
@@ -36,7 +47,7 @@ const StrategyPillars = () => {
     console.log('Stored pillars:', stored)
     if (stored) {
       try {
-        const pillarsArray = Array.isArray(stored) ? stored : []
+        const pillarsArray = Array.isArray(stored) ? stored.map(normalizePillar) : []
         console.log('Setting pillars:', pillarsArray)
         setPillars(pillarsArray)
       } catch (e) {
@@ -46,7 +57,7 @@ const StrategyPillars = () => {
     } else {
       setPillars([])
     }
-  }, [selectedYear])
+  }, [selectedYear, refreshKey])
 
   // Reload data when navigating back to this page
   useEffect(() => {
@@ -54,7 +65,7 @@ const StrategyPillars = () => {
     const stored = loadFromYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, selectedYear)
     if (stored) {
       try {
-        const pillarsArray = Array.isArray(stored) ? stored : []
+        const pillarsArray = Array.isArray(stored) ? stored.map(normalizePillar) : []
         console.log('Updated pillars from storage:', pillarsArray)
         setPillars(pillarsArray)
       } catch (e) {
@@ -70,7 +81,7 @@ const StrategyPillars = () => {
       const stored = loadFromYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, selectedYear)
       if (stored) {
         try {
-          const pillarsArray = Array.isArray(stored) ? stored : []
+          const pillarsArray = Array.isArray(stored) ? stored.map(normalizePillar) : []
           setPillars(pillarsArray)
         } catch (e) {
           console.error('Failed to parse stored pillars:', e)
@@ -95,7 +106,7 @@ const StrategyPillars = () => {
         if (stored) {
           try {
             const pillarsArray = JSON.parse(JSON.stringify(stored))
-            setPillars(Array.isArray(pillarsArray) ? pillarsArray : [])
+            setPillars(Array.isArray(pillarsArray) ? pillarsArray.map(normalizePillar) : [])
           } catch (error) {
             console.error('Failed to parse new storage value:', error)
           }
