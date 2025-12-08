@@ -74,24 +74,8 @@ const StrategyPillars = () => {
     }
   }, [location.pathname, selectedYear])
 
-  // Force reload when window regains focus
-  useEffect(() => {
-    const handleFocus = () => {
-      console.log('Window focused - reloading pillars')
-      const stored = loadFromYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, selectedYear)
-      if (stored) {
-        try {
-          const pillarsArray = Array.isArray(stored) ? stored.map(normalizePillar) : []
-          setPillars(pillarsArray)
-        } catch (e) {
-          console.error('Failed to parse stored pillars:', e)
-        }
-      }
-    }
-    
-    window.addEventListener('focus', handleFocus)
-    return () => window.removeEventListener('focus', handleFocus)
-  }, [selectedYear])
+  // Note: Removed window focus listener to prevent infinite loop
+  // Data is already loaded on mount and navigation changes
 
   // Listen for storage changes (from other tabs/windows or same tab)
   useEffect(() => {
@@ -118,13 +102,7 @@ const StrategyPillars = () => {
     return () => window.removeEventListener('storage', handleStorageChange)
   }, [selectedYear])
 
-  // Save to year-aware storage whenever pillars change
-  useEffect(() => {
-    if (pillars.length > 0) {
-      console.log('Saving pillars to storage:', pillars)
-      saveToYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, pillars, selectedYear)
-    }
-  }, [pillars, selectedYear])
+  // Note: Removed auto-save effect - saving is now done explicitly in handlers
 
   // Mock Must-Wins data - matching dashboard data
   const mockMustWins: MustWin[] = []
@@ -139,14 +117,15 @@ const StrategyPillars = () => {
 
   const handleSaveAssignment = () => {
     if (selectedPillarId) {
-      setPillars(prev => prev.map(pillar =>
+      const updatedPillars = pillars.map(pillar =>
         pillar.id === selectedPillarId
           ? { ...pillar, assignedWins: [...new Set([...pillar.assignedWins, ...selectedWins])] }
           : pillar
-      ))
+      )
+      setPillars(updatedPillars)
+      saveToYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, updatedPillars, selectedYear)
+      console.log('Assigned wins to pillar and saved:', selectedPillarId, selectedWins)
     }
-    console.log('Assigning wins to pillar:', selectedPillarId, selectedWins)
-    // TODO: Save to Azure Table Storage
     setShowAssignModal(false)
     setSelectedPillarId(null)
     setSelectedWins([])
@@ -154,7 +133,10 @@ const StrategyPillars = () => {
 
   const handleDeletePillar = (pillarId: number) => {
     if (window.confirm('Are you sure you want to delete this pillar? This action cannot be undone.')) {
-      setPillars(prev => prev.filter(pillar => pillar.id !== pillarId))
+      const updatedPillars = pillars.filter(pillar => pillar.id !== pillarId)
+      setPillars(updatedPillars)
+      saveToYearStorage(STORAGE_KEYS.STRATEGY_PILLARS, updatedPillars, selectedYear)
+      console.log('Deleted pillar and saved:', updatedPillars)
     }
   }
 
