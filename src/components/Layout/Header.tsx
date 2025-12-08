@@ -72,8 +72,6 @@ const Header = () => {
     { name: 'Update Sub-task Progress', path: '/sub-tasks/progress' },
   ]
 
-    const years = [2026, 2027, 2028]
-
   const handleLogout = () => {
     // instance.logoutPopup()
     console.log('Logout - will be implemented with SSO')

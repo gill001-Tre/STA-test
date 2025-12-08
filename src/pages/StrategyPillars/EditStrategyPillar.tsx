@@ -19,7 +19,8 @@ const EditStrategyPillar = () => {
   const [loading, setLoading] = useState(true)
   const [formData, setFormData] = useState({
     title: '',
-    description: ''
+    description: '',
+    year: 2026
   })
 
   useEffect(() => {
@@ -36,7 +37,8 @@ const EditStrategyPillar = () => {
           const objectivesText = pillar.objectives.join('\n')
           setFormData({
             title: pillar.title,
-            description: objectivesText
+            description: objectivesText,
+            year: selectedYear
           })
         }
       } catch (e) {

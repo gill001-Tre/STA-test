@@ -61,7 +61,6 @@ const EditMustWin = () => {
         
         if (mustWin) {
           setFormData({
-            year: 2026,
             title: mustWin.title,
             description: mustWin.description,
             assignedPillars: mustWin.assignedPillars || [],
