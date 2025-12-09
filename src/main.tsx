@@ -1,24 +1,19 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import { MsalProvider } from '@azure/msal-react'
-import { PublicClientApplication } from '@azure/msal-browser'
-import { msalConfig } from './config/config'
-import { AuthProvider } from './contexts/AuthContext'
-import { YearProvider } from './contexts/YearContext'
-import App from './App'
-import './index.css'
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { AuthProvider } from './contexts/AuthContext';
+import { YearProvider } from './contexts/YearContext';
+import App from './App';
+import './index.css';
 
-// Create MSAL instance
-const msalInstance = new PublicClientApplication(msalConfig)
+// NO MSAL - Using Azure Static Web Apps built-in authentication
+// Authentication is handled by /.auth/* endpoints
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <MsalProvider instance={msalInstance}>
-      <AuthProvider>
-        <YearProvider>
-          <App />
-        </YearProvider>
-      </AuthProvider>
-    </MsalProvider>
+    <AuthProvider>
+      <YearProvider>
+        <App />
+      </YearProvider>
+    </AuthProvider>
   </StrictMode>,
-)
+);

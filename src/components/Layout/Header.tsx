@@ -1,15 +1,14 @@
-import { Link, useLocation } from 'react-router-dom'
-// import { useMsal } from '@azure/msal-react'
+﻿import { Link, useLocation } from 'react-router-dom'
 import { useState, useRef, useEffect } from 'react'
 import logo from '../../assets/logo.png'
 import { useYear } from '@/contexts/YearContext'
-import { useAuth, getTestUsers } from '@/contexts/AuthContext'
+import { useAuth, ROLE_INFO } from '@/contexts/AuthContext'
+import type { UserRole } from '@/contexts/AuthContext'
 
 const Header = () => {
   const location = useLocation()
   const { selectedYear, setSelectedYear, availableYears } = useYear()
-  const { user, switchUser } = useAuth()
-  // const { instance, accounts } = useMsal()
+  const { user, switchRole, logout } = useAuth()
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false)
   const [isPillarsDropdownOpen, setIsPillarsDropdownOpen] = useState(false)
   const [isMustWinsDropdownOpen, setIsMustWinsDropdownOpen] = useState(false)
@@ -73,11 +72,11 @@ const Header = () => {
   ]
 
   const handleLogout = () => {
-    // instance.logoutPopup()
-    console.log('Logout - will be implemented with SSO')
+    logout()
   }
 
-  const testUsers = getTestUsers()
+  // Available roles for switching
+  const availableRoles: UserRole[] = ['CTIO', 'HeadOfDepartment', 'Teamchef', 'Employee']
 
   return (
     <header className="bg-primary text-white">
@@ -294,27 +293,27 @@ const Header = () => {
                 <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 z-50">
                   <div className="px-4 py-2 border-b border-gray-200">
                     <p className="font-semibold text-gray-900">{user?.name}</p>
-                    <p className="text-sm text-gray-600">{user?.role}</p>
+                    <p className="text-sm text-gray-600">{user?.role && ROLE_INFO[user.role]?.title}</p>
                     <p className="text-xs text-gray-500">{user?.email}</p>
                   </div>
                   
                   <div className="py-1">
-                    <p className="px-4 py-2 text-xs font-semibold text-gray-700 uppercase">Switch User</p>
-                    {testUsers.map((testUser) => (
+                    <p className="px-4 py-2 text-xs font-semibold text-gray-700 uppercase">Switch Role</p>
+                    {availableRoles.map((role) => (
                       <button
-                        key={testUser.id}
+                        key={role}
                         onClick={() => {
-                          switchUser(testUser)
+                          switchRole(role)
                           setIsUserDropdownOpen(false)
                         }}
                         className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                          user?.id === testUser.id
+                          user?.role === role
                             ? 'bg-orange-100 text-primary font-semibold'
                             : 'text-gray-800 hover:bg-orange-50 hover:text-primary'
                         }`}
                       >
-                        <span className="font-medium">{testUser.name}</span>
-                        <p className="text-xs text-gray-600">{testUser.role}</p>
+                        <span className="font-medium">{ROLE_INFO[role].title}</span>
+                        <p className="text-xs text-gray-600">{ROLE_INFO[role].description}</p>
                       </button>
                     ))}
                   </div>

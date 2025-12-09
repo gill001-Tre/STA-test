@@ -1,44 +1,58 @@
-import { useMsal } from '@azure/msal-react'
-import { loginRequest } from '@/config/config'
+import { useAuth } from '@/contexts/AuthContext';
 
 const Login = () => {
-  const { instance } = useMsal()
+  const { login, loading } = useAuth();
 
-  const handleLogin = async () => {
-    try {
-      await instance.loginPopup(loginRequest)
-    } catch (error) {
-      console.error('Login failed:', error)
-    }
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent mx-auto mb-4"></div>
+          <p className="text-white text-lg">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center">
-      <div className="bg-white rounded-2xl shadow-2xl p-12 max-w-md w-full">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900">
+      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
+        {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-white font-bold text-4xl">3</span>
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Tre Strategy Tracker</h1>
-          <p className="text-gray-600">Track strategy progress across organizational levels</p>
+          <img
+            src="/3 Line Logo - white.png"
+            alt="Tre Logo"
+            className="h-16 mx-auto mb-4 invert"
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
+          />
+          <h1 className="text-2xl font-bold text-gray-900">Strategy Tracker</h1>
+          <p className="text-gray-500 mt-2">Sign in to continue</p>
         </div>
 
+        {/* Login Button */}
         <button
-          onClick={handleLogin}
-          className="w-full bg-primary hover:bg-primary-dark text-white font-semibold py-4 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+          onClick={login}
+          className="w-full flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
         >
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" />
+          {/* Microsoft Logo */}
+          <svg className="w-6 h-6" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg">
+            <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+            <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+            <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+            <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
           </svg>
-          <span>Sign in with Microsoft</span>
+          Sign in with Microsoft
         </button>
 
-        <p className="text-center text-gray-500 text-sm mt-6">
-          Use your company SSO credentials to access the application
+        {/* Info */}
+        <p className="text-center text-gray-400 text-sm mt-6">
+          Supports Microsoft personal and corporate accounts
         </p>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Login
+export default Login;

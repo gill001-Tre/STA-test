@@ -1,118 +1,141 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { STORAGE_KEYS, loadFromYearStorage, saveToYearStorage } from '@/utils/storageHelper'
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { swaAuthService, AuthUser } from '@/services/swaAuth';
+import { userRoleService, UserRole, ROLE_INFO } from '@/services/userRole';
 
-export type UserRole = 'CTIO' | 'HeadOfDepartment' | 'Teamchef' | 'Employee'
+export type { UserRole } from '@/services/userRole';
 
 export interface User {
-  id: string
-  name: string
-  email: string
-  role: UserRole
-  avatar?: string
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  avatar?: string;
 }
 
 interface AuthContextType {
-  user: User | null
-  isAuthenticated: boolean
-  role: UserRole | null
-  loading: boolean
-  login: (email: string, name: string, role: UserRole) => void
-  logout: () => void
-  switchRole: (role: UserRole) => void
-  switchUser: (user: User) => void
+  user: User | null;
+  isAuthenticated: boolean;
+  role: UserRole | null;
+  loading: boolean;
+  needsRoleSelection: boolean;
+  login: () => void;
+  logout: () => void;
+  selectRole: (role: UserRole) => Promise<void>;
+  switchRole: (role: UserRole) => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
-
-// Test users following the test flow (CTIO, Head of Department, Teamchef, Employee)
-const MOCK_USERS: Record<string, User> = {
-  'ctio@tre.se': {
-    id: '1',
-    name: 'CTIO',
-    email: 'ctio@tre.se',
-    role: 'CTIO',
-    avatar: 'CT'
-  },
-  'hod@tre.se': {
-    id: '2',
-    name: 'Head of Department',
-    email: 'hod@tre.se',
-    role: 'HeadOfDepartment',
-    avatar: 'HD'
-  },
-  'chef@tre.se': {
-    id: '3',
-    name: 'Teamchef',
-    email: 'chef@tre.se',
-    role: 'Teamchef',
-    avatar: 'TC'
-  },
-  'employee@tre.se': {
-    id: '4',
-    name: 'Employee',
-    email: 'employee@tre.se',
-    role: 'Employee',
-    avatar: 'EM'
-  },
-}
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [needsRoleSelection, setNeedsRoleSelection] = useState(false);
+  const [swaUser, setSwaUser] = useState<AuthUser | null>(null);
 
-  // Load user from year-aware localStorage on mount
+  // Check authentication on mount
   useEffect(() => {
-    const currentYear = new Date().getFullYear()
-    const stored = loadFromYearStorage(STORAGE_KEYS.AUTH_USER, currentYear)
-    
-    if (stored) {
-      try {
-        setUser(stored)
-      } catch (error) {
-        console.error('Failed to load user:', error)
-      }
-    } else {
-      // Default to CTIO for development/testing
-      const defaultUser = Object.values(MOCK_USERS)[0]
-      setUser(defaultUser)
-      saveToYearStorage(STORAGE_KEYS.AUTH_USER, defaultUser, currentYear)
-    }
-    setLoading(false)
-  }, [])
+    checkAuth();
+  }, []);
 
-  const login = (email: string, name: string, role: UserRole) => {
-    const currentYear = new Date().getFullYear()
-    const newUser: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      name,
-      email,
-      role,
-      avatar: name.substring(0, 2).toUpperCase()
+  const checkAuth = async () => {
+    setLoading(true);
+    try {
+      // Get user from SWA /.auth/me (or demo mode)
+      const authUser = await swaAuthService.getCurrentUser();
+      
+      if (!authUser) {
+        // Not authenticated
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      setSwaUser(authUser);
+
+      // Check if user has a role in Table Storage
+      const roleEntity = await userRoleService.getUserRole(authUser.userId);
+      
+      if (!roleEntity) {
+        // First-time user - needs to select role
+        setNeedsRoleSelection(true);
+        setLoading(false);
+        return;
+      }
+
+      // Returning user - load their role
+      const appUser: User = {
+        id: authUser.userId,
+        name: authUser.displayName,
+        email: authUser.email,
+        role: roleEntity.Role as UserRole,
+        avatar: authUser.displayName.substring(0, 2).toUpperCase()
+      };
+
+      setUser(appUser);
+      setNeedsRoleSelection(false);
+
+    } catch (error) {
+      console.error('[AuthContext] Error checking auth:', error);
+      setUser(null);
+    } finally {
+      setLoading(false);
     }
-    setUser(newUser)
-    saveToYearStorage(STORAGE_KEYS.AUTH_USER, newUser, currentYear)
-  }
+  };
+
+  const login = () => {
+    swaAuthService.login();
+  };
 
   const logout = () => {
-    const currentYear = new Date().getFullYear()
-    setUser(null)
-    localStorage.removeItem(`${STORAGE_KEYS.AUTH_USER}-${currentYear}`)
-  }
+    setUser(null);
+    setSwaUser(null);
+    setNeedsRoleSelection(false);
+    swaAuthService.logout();
+  };
 
-  const switchRole = (role: UserRole) => {
-    if (user) {
-      const currentYear = new Date().getFullYear()
-      const updatedUser = { ...user, role }
-      setUser(updatedUser)
-      saveToYearStorage(STORAGE_KEYS.AUTH_USER, updatedUser, currentYear)
+  const selectRole = async (role: UserRole) => {
+    if (!swaUser) return;
+
+    try {
+      // Save role to Table Storage
+      await userRoleService.saveUserRole(swaUser.userId, role, {
+        email: swaUser.email,
+        displayName: swaUser.displayName
+      });
+
+      // Set user with selected role
+      const appUser: User = {
+        id: swaUser.userId,
+        name: swaUser.displayName,
+        email: swaUser.email,
+        role: role,
+        avatar: swaUser.displayName.substring(0, 2).toUpperCase()
+      };
+
+      setUser(appUser);
+      setNeedsRoleSelection(false);
+
+    } catch (error) {
+      console.error('[AuthContext] Error saving role:', error);
+      throw error;
     }
-  }
+  };
 
-  const switchUser = (newUser: User) => {
-    const currentYear = new Date().getFullYear()
-    setUser(newUser)
-    saveToYearStorage(STORAGE_KEYS.AUTH_USER, newUser, currentYear)
-  }
+  const switchRole = async (role: UserRole) => {
+    if (!user || !swaUser) return;
+
+    try {
+      await userRoleService.saveUserRole(swaUser.userId, role, {
+        email: swaUser.email,
+        displayName: swaUser.displayName
+      });
+
+      setUser({ ...user, role });
+
+    } catch (error) {
+      console.error('[AuthContext] Error switching role:', error);
+    }
+  };
 
   return (
     <AuthContext.Provider
@@ -121,37 +144,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isAuthenticated: !!user,
         role: user?.role || null,
         loading,
+        needsRoleSelection,
         login,
         logout,
+        selectRole,
         switchRole,
-        switchUser,
       }}
     >
       {children}
     </AuthContext.Provider>
-  )
-}
+  );
+};
 
 export const useAuth = () => {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within AuthProvider')
+    throw new Error('useAuth must be used within AuthProvider');
   }
-  return context
-}
+  return context;
+};
 
-/**
- * Get all test users for development/testing
- */
-export const getTestUsers = (): User[] => {
-  return Object.values(MOCK_USERS)
-}
-
-/**
- * Get user by role
- */
-export const getUserByRole = (role: UserRole): User | undefined => {
-  return Object.values(MOCK_USERS).find(user => user.role === role)
-}
-
-export { MOCK_USERS }
+// Export role info for UI
+export { ROLE_INFO } from '@/services/userRole';
