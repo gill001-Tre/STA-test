@@ -1,32 +1,31 @@
-/**
+﻿/**
  * ============================================
  * APPLICATION CONFIGURATION
  * ============================================
- * 
+ *
  * Configure your Azure Table Storage connection here.
- * Set by the developer, NOT by end users.
+ * Environment variables are set in Azure Static Web Apps Configuration.
  */
 
 export const CONFIG = {
   // ============================================
   // DEMO MODE
   // ============================================
-  // Set to true for local testing without Azure
-  // Set to false for production
-  DEMO_MODE: true,  // Change to false for production
+  // Automatically uses demo mode on localhost, production mode on Azure
+  DEMO_MODE: import.meta.env.VITE_DEMO_MODE === 'true' || typeof window !== 'undefined' && window.location.hostname === 'localhost',
 
   // ============================================
   // AZURE TABLE STORAGE CONFIGURATION
   // ============================================
   AZURE_STORAGE: {
-    // Storage account name
-    accountName: import.meta.env.VITE_AZURE_STORAGE_ACCOUNT || '',
+    // Storage account name (set in Azure: VITE_STORAGE_ACCOUNT_NAME)
+    accountName: import.meta.env.VITE_STORAGE_ACCOUNT_NAME || '',
     
-    // SAS token with Table permissions
-    sasToken: import.meta.env.VITE_AZURE_STORAGE_SAS || '',
-    
+    // SAS token with Table permissions (set in Azure: VITE_STORAGE_SAS_TOKEN)
+    sasToken: import.meta.env.VITE_STORAGE_SAS_TOKEN || '',
+
     // Table for user roles
-    userRolesTable: 'UserRoles'
+    userRolesTable: import.meta.env.VITE_STORAGE_TABLE_NAME || 'UserRoles'
   },
 
   // ============================================
