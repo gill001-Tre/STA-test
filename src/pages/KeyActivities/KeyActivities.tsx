@@ -121,6 +121,8 @@ const KeyActivities = () => {
           const updatedActivities = stored.filter((activity: any) => activity.id !== activityId)
           saveToYearStorage(STORAGE_KEYS.KEY_ACTIVITIES, updatedActivities, selectedYear)
           loadActivities()
+          // Dispatch custom event to notify other components (like Dashboard) to reload
+          window.dispatchEvent(new CustomEvent('storage-updated', { detail: { key: STORAGE_KEYS.KEY_ACTIVITIES } }))
         } catch (e) {
           console.error('Failed to delete activity:', e)
         }

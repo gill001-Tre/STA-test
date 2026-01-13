@@ -123,6 +123,8 @@ const SubTasks = () => {
       const updatedTasks = allSubTasks.filter(task => task.id !== taskId)
       setAllSubTasks(updatedTasks)
       saveToYearStorage(STORAGE_KEYS.SUB_TASKS, updatedTasks, selectedYear)
+      // Dispatch custom event to notify other components (like Dashboard) to reload
+      window.dispatchEvent(new CustomEvent('storage-updated', { detail: { key: STORAGE_KEYS.SUB_TASKS } }))
     }
   }
 
