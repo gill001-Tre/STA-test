@@ -192,11 +192,18 @@ const Dashboard = () => {
       loadData()
     }
     
+    // Reload data when storage is updated from other components
+    const handleStorageUpdate = (event: Event) => {
+      loadData()
+    }
+    
     window.addEventListener('focus', handleFocus)
+    window.addEventListener('storage-updated', handleStorageUpdate)
     
     // Cleanup
     return () => {
       window.removeEventListener('focus', handleFocus)
+      window.removeEventListener('storage-updated', handleStorageUpdate)
     }
   }, [selectedYear])
 
